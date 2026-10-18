@@ -62,7 +62,7 @@ class TestFastMCPServerAndNetworkingSafeguards(unittest.TestCase):
             session_id="mcp_tester",
         )
         self.assertTrue(intake_res["ticket"]["decision"]["auto_approve"])
-        self.assertEqual(intake_res["ticket"]["decision"]["assigned_sor"], "415011")
+        self.assertEqual(intake_res["ticket"]["decision"]["assigned_sor"], "125011")
 
         # 4. Simulation Tool: simulate_complaint_event
         sim_res = exec_simulate_complaint_event(
@@ -75,12 +75,12 @@ class TestFastMCPServerAndNetworkingSafeguards(unittest.TestCase):
         # 5. Actuator Tool: approve_or_override_work_order
         act_res = exec_approve_or_override_work_order(
             ticket_id=sim_ticket_id,
-            override_sor="112001",
+            override_sor="192001",
             surveyor_notes="Approved via MCP Actuator Tool",
             session_id="mcp_tester",
         )
         self.assertEqual(act_res["status"], "approved_or_overridden")
-        self.assertEqual(act_res["ticket"]["decision"]["assigned_sor"], "112001")
+        self.assertEqual(act_res["ticket"]["decision"]["assigned_sor"], "192001")
 
 
 if __name__ == "__main__":

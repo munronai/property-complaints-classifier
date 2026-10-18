@@ -267,82 +267,84 @@ class SimulatedJevEngine:
             if "not sure if it is coming from the copper supply pipe" in text_lower or (
                 "pooling" in text_lower and "push-fit" not in text_lower
             ):
-                # Preset 2: Ambiguous SOR margin between 112001 (0.54) and 112005 (0.44)
+                # Preset 2: Ambiguous SOR margin between 192001 (0.54) and 192005 (0.44)
                 distribution = {
-                    "112001": 0.54,
-                    "112005": 0.44,
-                    "114010": 0.01,
-                    "115020": 0.00,
+                    "192001": 0.54,
+                    "192005": 0.44,
+                    "194010": 0.01,
+                    "195020": 0.00,
                     "OTHER": 0.01,
                 }
             elif "cistern" in text_lower or "ball valve" in text_lower or preset == "cistern_valve":
                 distribution = {
-                    "114010": 0.86,
-                    "112001": 0.07,
-                    "112005": 0.04,
-                    "115020": 0.01,
+                    "194010": 0.86,
+                    "192001": 0.07,
+                    "192005": 0.04,
+                    "195020": 0.01,
                     "OTHER": 0.02,
                 }
             elif "push-fit" in text_lower or "waste" in text_lower or "trap" in text_lower:
                 distribution = {
-                    "112005": 0.84,
-                    "112001": 0.11,
-                    "114010": 0.02,
-                    "115020": 0.01,
+                    "192005": 0.84,
+                    "192001": 0.11,
+                    "194010": 0.02,
+                    "195020": 0.01,
                     "OTHER": 0.02,
                 }
             elif "burst" in text_lower:
                 distribution = {
-                    "115020": 0.89,
-                    "112001": 0.08,
-                    "112005": 0.01,
-                    "114010": 0.01,
+                    "195020": 0.89,
+                    "192001": 0.08,
+                    "192005": 0.01,
+                    "194010": 0.01,
                     "OTHER": 0.01,
                 }
             else:
                 distribution = {
-                    "112001": 0.78,
-                    "112005": 0.14,
-                    "114010": 0.04,
-                    "115020": 0.02,
+                    "192001": 0.78,
+                    "192005": 0.14,
+                    "194010": 0.04,
+                    "195020": 0.02,
                     "OTHER": 0.02,
                 }
 
         elif trade == TradeCode.DAMP.value:
-            if "repoint" in text_lower or "brickwork" in text_lower:
-                distribution = {"242005": 0.81, "241001": 0.12, "241010": 0.04, "OTHER": 0.03}
+            if "dpc" in text_lower or "rising damp" in text_lower or "chemical" in text_lower:
+                distribution = {"112005": 0.85, "114001": 0.08, "112015": 0.04, "OTHER": 0.03}
+            elif "repoint" in text_lower or "brickwork" in text_lower:
+                distribution = {"112015": 0.81, "114001": 0.12, "114010": 0.04, "OTHER": 0.03}
             elif "fan" in text_lower or "humidistat" in text_lower:
-                distribution = {"241010": 0.83, "241001": 0.11, "242005": 0.03, "OTHER": 0.03}
+                distribution = {"114010": 0.83, "114001": 0.11, "112015": 0.03, "OTHER": 0.03}
             else:
-                distribution = {"241001": 0.87, "241010": 0.08, "242005": 0.03, "OTHER": 0.02}
+                distribution = {"114001": 0.87, "114010": 0.08, "112005": 0.03, "OTHER": 0.02}
 
         elif trade == TradeCode.ELEC.value:
             if "ceiling rose" in text_lower or "light fitting" in text_lower or preset == "ceiling_light_leak":
-                distribution = {"611001": 0.91, "612015": 0.04, "614002": 0.02, "OTHER": 0.03}
+                distribution = {"211001": 0.91, "212015": 0.04, "214002": 0.02, "OTHER": 0.03}
             elif "smoke" in text_lower or "alarm" in text_lower:
-                distribution = {"614002": 0.88, "612015": 0.06, "611001": 0.03, "OTHER": 0.03}
+                distribution = {"214002": 0.88, "212015": 0.06, "211001": 0.03, "OTHER": 0.03}
             else:
-                distribution = {"612015": 0.82, "611001": 0.09, "614002": 0.05, "OTHER": 0.04}
+                distribution = {"212015": 0.82, "211001": 0.09, "214002": 0.05, "OTHER": 0.04}
 
         elif trade == TradeCode.JOIN.value:
             if preset == "broken_hinge" or "kitchen" in text_lower or "hinge" in text_lower or "hanging off" in text_lower:
-                distribution = {"415011": 0.85, "411008": 0.09, "413020": 0.03, "OTHER": 0.03}
+                distribution = {"125011": 0.85, "121008": 0.09, "123020": 0.03, "OTHER": 0.03}
             elif "fire door" in text_lower or "intumescent" in text_lower:
-                distribution = {"411008": 0.84, "415011": 0.08, "413020": 0.05, "OTHER": 0.03}
+                distribution = {"121008": 0.84, "125011": 0.08, "123020": 0.05, "OTHER": 0.03}
             else:
-                distribution = {"413020": 0.80, "411008": 0.11, "415011": 0.05, "OTHER": 0.04}
+                distribution = {"123020": 0.80, "121008": 0.11, "125011": 0.05, "OTHER": 0.04}
 
         elif trade == TradeCode.ROOF.value:
             if "gutter" in text_lower or "downpipe" in text_lower:
-                distribution = {"315012": 0.84, "311004": 0.12, "OTHER": 0.04}
+                distribution = {"105012": 0.84, "101004": 0.12, "OTHER": 0.04}
             else:
-                distribution = {"311004": 0.83, "315012": 0.13, "OTHER": 0.04}
+                distribution = {"101004": 0.83, "105012": 0.13, "OTHER": 0.04}
 
         elif trade == TradeCode.PLAS.value:
             if "ceiling" in text_lower or "overboard" in text_lower:
-                distribution = {"512008": 0.82, "511002": 0.14, "OTHER": 0.04}
+                distribution = {"162008": 0.82, "161002": 0.14, "OTHER": 0.04}
             else:
-                distribution = {"511002": 0.81, "512008": 0.15, "OTHER": 0.04}
+                distribution = {"161002": 0.81, "162008": 0.15, "OTHER": 0.04}
 
         else:
             distribution = {"OTHER": 0.92}

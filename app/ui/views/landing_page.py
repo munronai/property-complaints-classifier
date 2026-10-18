@@ -1,77 +1,107 @@
-"""Prototype Landing Page with Summary Description, Two Option Cards, and Below-the-Cards Help & Preset Guide."""
+"""Page 1: Prototype Landing Page (Overview, Option Cards & Guided Walkthrough — No Cluttered Stats Bar)."""
 
+from typing import Any
 import streamlit as st
 
 from app.ui.components.help_and_presets import render_help_and_presets_section
-from app.ui.components.kpi_header import render_kpi_header
 
 
-def render_landing_page(session_id: str) -> None:
-    """Renders the Landing Page with executive summary, 2 primary Option Cards, and help/preset reference below."""
+def render_landing_page(
+    page_dashboard: Any,
+    page_research: Any,
+    page_guide_claude: Any,
+    page_mcp: Any,
+    page_guide_inspector: Any,
+) -> None:
+    """Renders the clean Landing Page with summary description, 2 main Option Cards, 3 MCP cards, and below-the-fold guide."""
+    st.title("🏘️ Social Housing & Property Repairs Triage Sandbox")
+    st.subheader(
+        "Eliminating Contractor Mis-Dispatch, Wasted Callouts & Awaab's Law Compliance Risks with Two-Stage TypeSafe Jev + M3NHF SOR Gating"
+    )
+
     st.markdown(
         """
-        # 🏘️ Social Housing & Property Complaint Classifier Prototype
-        ### AI-Native Multimodal Intake, M3NHF SOR Classification & Statutory Circuit-Breaker Sandbox
+        Welcome to the **Social Housing & Property Complaint Classifier Prototype**.
+        In property management, resident repair channels (**Web Portals** and **WhatsApp**) are flooded with a mix of
+        urgent emergencies, vague descriptions with sideways smartphone photos, work-in-progress (WIP) status chasers,
+        complaints about botched completed repairs, and statutory **Awaab's Law** damp and mould hazards.
+
+        This prototype demonstrates how a **Two-Stage Multimodal TypeSafe Jev Engine** paired with **M3NHF Schedule of Rates (SOR) codes**
+        and a **Hard Circuit-Breaker Middleware (`TriageEscalationGuard`)** safely automates unambiguous repairs while intercepting
+        statutory risks, non-repair updates, completed-job recalls, and inappropriate media before a contractor is ever dispatched.
         """
     )
 
-    st.info(
-        "**Prototype Summary:** This platform demonstrates how social housing providers and commercial property "
-        "managers can safely automate multi-channel repair complaint triage (**Web Portal** & **WhatsApp**) "
-        "using **TypeSafe Jev** and **M3NHF Schedule of Rates (SOR) codes**. To eliminate contractor mis-dispatch "
-        "and statutory compliance failures, the pipeline combines a **Two-Stage Multimodal Assessment Engine** "
-        "with a **Hard Circuit-Breaker Middleware (`TriageEscalationGuard`)** that intercepts **Awaab's Law** damp "
-        "hazards, **24-hour emergencies**, **ambiguous SOR probability margins ($<0.15$)**, **WIP/scheduling/finance "
-        "inquiries**, **completed-repair workmanship recalls**, and **inappropriate photo submissions**."
-    )
-
-    render_kpi_header(session_id=session_id)
-    st.write("")
-
-    # Two Primary Option Cards Side-by-Side
-    card_col1, card_col2 = st.columns(2, gap="large")
-
-    with card_col1:
+    # Two Primary Option Cards Side-by-Side (Native st.page_link navigation)
+    cta_col1, cta_col2 = st.columns(2, gap="large")
+    with cta_col1:
         with st.container(border=True):
-            st.markdown("## 🧪 Option 1: Interactive Sandbox & Control Deck")
-            st.markdown(
-                """
-                **Hands-on testing workbench for evaluating the end-to-end classification & gating pipeline:**
-                - **Live Multi-Channel Intake**: Submit resident or contractor messages via **Dashboard UI** or **WhatsApp Business Webhook Simulator** with uploaded or synthetic defect photos.
-                - **9 Time-Machine Scenario Presets**: One-click injection of calibrated edge cases (Clean Plumbing Dispatch, Ambiguous Margin Trap, Awaab's Law Black Mould, Priority 3 Ceiling Rose Leak, Completed-Job Recall, WIP Update Re-Route, Contractor Late Payment, and Inappropriate Photo Purge).
-                - **Real-Time Policy Tuning**: Adjust confidence, margin, and damp sliders in the sidebar to see live routing changes.
-                - **Surveyor Review Queue & Embedded MCP Console**: Override M3NHF SOR codes or invoke FastMCP agent tools in-browser.
-                """
+            st.markdown("### 🎛️ Option 1: Launch the Interactive Sandbox")
+            st.write(
+                "Select a social housing or commercial property, test the 9 one-click scenario presets, submit custom "
+                "Web or WhatsApp complaints with defect photos, toggle between Simulated and Live Jev API, and tune "
+                "confidence/margin thresholds with instant visual feedback."
             )
-            if st.button(
-                "Launch Sandbox & Control Deck →",
-                key="btn_card_sandbox",
-                type="primary",
+            st.page_link(
+                page_dashboard,
+                label="Open Live Sandbox Dashboard →",
+                icon="🚀",
                 use_container_width=True,
-            ):
-                st.session_state["active_page"] = "SANDBOX"
-                st.rerun()
+            )
 
-    with card_col2:
+    with cta_col2:
         with st.container(border=True):
-            st.markdown("## 📘 Option 2: Product Thinking, Insights & Decisions")
-            st.markdown(
-                r"""
-                **Deep dive into the domain research, product rationale, and architectural trade-offs behind this system:**
-                - **The Real-World Intake Problem**: Why 35%–45% of incoming housing messages are *not* new repairs (UK Housing Ombudsman & Commercial Property statistical breakdowns).
-                - **Completed-Repair Recalls vs. WIP Updates**: Why WIP/scheduling/finance chasers must short-circuit Stage 2, whereas complaints about *completed* repair jobs must undergo full Jev + M3NHF SOR assessment to hold contractors accountable.
-                - **Two-Stage TypeSafe Jev vs. Raw LLM Chat**: How trade-bounded candidate sets and Top-1 vs. Top-2 margin gating ($\ge 0.15$) prevent hallucinated SOR codes.
-                - **Safety & Statutory Guardrails**: Awaab's Law circuit breakers and Stage 1 inappropriate photo purging.
-                """
+            st.markdown("### 🧠 Option 2: Product Thinking, Insights & Decisions")
+            st.write(
+                "Explore the domain research from UK Housing Ombudsman & Commercial Tribunal datasets, why 35%–45% of "
+                "messages are non-new-repair updates, why completed-job recalls still require SOR scoping, and why "
+                "Two-Stage Jev + Margin Gating beats raw LLM chat."
             )
-            if st.button(
-                "Explore Product Thinking & Insights →",
-                key="btn_card_insights",
-                type="secondary",
+            st.page_link(
+                page_research,
+                label="Read Product Thinking & Decisions →",
+                icon="📐",
                 use_container_width=True,
-            ):
-                st.session_state["active_page"] = "INSIGHTS"
-                st.rerun()
+            )
 
-    # Below the Two Option Cards: Help Content & Preset Guide
-    render_help_and_presets_section(show_quick_launch=True)
+    st.markdown("### 🤖 Model Context Protocol (MCP) Agent Integrations (Showcasing Pillar 2)")
+    g_col1, g_col2, g_col3 = st.columns(3)
+    with g_col1:
+        with st.container(border=True):
+            st.markdown("#### 🔌 Claude Desktop & Cursor (Option 1)")
+            st.write(
+                "Connect Claude or Cursor over `/mcp/sse` and see the exact natural-language prompts that trigger each M3NHF tool and preset."
+            )
+            st.page_link(
+                page_guide_claude,
+                label="Open Claude & Cursor Setup + Prompt Guide →",
+                icon="🔌",
+                use_container_width=True,
+            )
+    with g_col2:
+        with st.container(border=True):
+            st.markdown("#### 🤖 Interactive MCP Agent Console (Option 2)")
+            st.write(
+                "Run live MCP tool handshakes, execute all 9 preset prompts over JSON-RPC, and inspect resources right inside your browser."
+            )
+            st.page_link(
+                page_mcp,
+                label="Open Interactive MCP Agent Console →",
+                icon="🤖",
+                use_container_width=True,
+            )
+    with g_col3:
+        with st.container(border=True):
+            st.markdown("#### 🔬 Official MCP Inspector (Option 3)")
+            st.write(
+                "Use the official zero-install `npx @modelcontextprotocol/inspector` visualizer to test tool schemas and SSE streams."
+            )
+            st.page_link(
+                page_guide_inspector,
+                label="Open Official MCP Inspector Guide →",
+                icon="🔬",
+                use_container_width=True,
+            )
+
+    # Below the Cards: Step-by-Step Help Content, 4-Stage Rationale & 9-Preset Guide
+    render_help_and_presets_section(show_quick_launch=False)

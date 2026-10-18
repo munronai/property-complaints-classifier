@@ -58,9 +58,9 @@ class TestTriageEscalationGuard(unittest.TestCase):
         s2 = {
             "answers": {
                 "selected_sor": {
-                    "value": "112001",
+                    "value": "192001",
                     "probability": 0.54,
-                    "distribution": {"112001": 0.54, "112005": 0.44, "OTHER": 0.02},
+                    "distribution": {"192001": 0.54, "192005": 0.44, "OTHER": 0.02},
                 }
             }
         }
@@ -177,9 +177,9 @@ class TestTriageEscalationGuard(unittest.TestCase):
         s2 = {
             "answers": {
                 "selected_sor": {
-                    "value": "112005",
+                    "value": "192005",
                     "probability": 0.84,
-                    "distribution": {"112005": 0.84, "112001": 0.11, "OTHER": 0.05},
+                    "distribution": {"192005": 0.84, "192001": 0.11, "OTHER": 0.05},
                 }
             }
         }
@@ -188,7 +188,7 @@ class TestTriageEscalationGuard(unittest.TestCase):
         self.assertTrue(res.is_completed_job_recall)
         self.assertEqual(res.destination, RoutingDestination.QUALITY_RECALL_SURVEYOR_REVIEW)
         self.assertEqual(res.assigned_trade, "PLUM")
-        self.assertEqual(res.assigned_sor, "112005")
+        self.assertEqual(res.assigned_sor, "192005")
         self.assertIn(EscalationReason.POST_REPAIR_QUALITY_COMPLAINT, res.reasons)
 
 

@@ -45,35 +45,35 @@ class SessionStore:
         self._session_last_access: Dict[str, float] = {}
 
     def _build_golden_baseline_tickets(self) -> List[TriageTicketRecord]:
-        """Creates the immutable clean baseline tickets representing nominal initial state."""
+        """Creates the immutable clean baseline tickets representing nominal, low-risk initial state across all 3 properties."""
         seed_requests = [
             ComplaintIntakeRequest(
                 complaint_text=(
-                    "The toilet cistern in the main bathroom won't stop filling up and water is "
-                    "constantly trickling down the overflow pipe into the pan."
+                    "The toilet cistern in the ground floor washroom won't stop filling up and water is "
+                    "trickling down the overflow pipe into the pan. The float ball valve seems stuck."
                 ),
-                property_id="prop_oak_01",
+                property_id="prop_cedar_03",
                 channel=IntakeChannel.DASHBOARD_UI,
                 synthetic_image_preset="cistern_valve",
                 session_id="golden_baseline",
             ),
             ComplaintIntakeRequest(
                 complaint_text=(
-                    "There is water pooling inside the kitchen base cupboard underneath the sink. "
-                    "Not sure if it is coming from the copper supply pipe joint or the plastic waste trap."
+                    "Hi, this metal thing snapped off on the kitchen cupboard door today and the door is hanging off, see pic."
                 ),
-                property_id="prop_oak_01",
+                property_id="prop_elm_02",
                 channel=IntakeChannel.WHATSAPP,
-                synthetic_image_preset="sink_leak",
+                synthetic_image_preset="broken_hinge",
                 session_id="golden_baseline",
             ),
             ComplaintIntakeRequest(
                 complaint_text=(
-                    "Heavy black mould spreading across the child's bedroom window reveal and cold external wall."
+                    "The toilet cistern in the main bathroom won't stop filling up and water is "
+                    "constantly trickling down the overflow pipe into the pan. The float ball valve seems stuck."
                 ),
-                property_id="prop_elm_02",
-                channel=IntakeChannel.WHATSAPP,
-                synthetic_image_preset="black_mould",
+                property_id="prop_oak_01",
+                channel=IntakeChannel.DASHBOARD_UI,
+                synthetic_image_preset="cistern_valve",
                 session_id="golden_baseline",
             ),
         ]

@@ -1,17 +1,19 @@
-"""Modular Streamlit views for Landing Page, Product Insights, and Sandbox Control Deck."""
+"""Modular Streamlit views for Overview, Live Sandbox Dashboard, Product Insights, and MCP Guides/Console."""
 
 from app.ui.views.landing_page import render_landing_page
-from app.ui.views.live_intake import render_live_intake_view
 from app.ui.views.mcp_console import render_mcp_console_view
+from app.ui.views.mcp_guides import (
+    render_claude_cursor_guide,
+    render_mcp_inspector_guide,
+)
 from app.ui.views.product_insights import render_product_insights_view
-from app.ui.views.surveyor_desk import render_surveyor_desk_view
-from app.ui.views.time_machine import render_time_machine_view
+from app.ui.views.sandbox_dashboard import render_sandbox_dashboard_page
 
 __all__ = [
+    "render_claude_cursor_guide",
     "render_landing_page",
-    "render_live_intake_view",
     "render_mcp_console_view",
+    "render_mcp_inspector_guide",
     "render_product_insights_view",
-    "render_surveyor_desk_view",
-    "render_time_machine_view",
+    "render_sandbox_dashboard_page",
 ]

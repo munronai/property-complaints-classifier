@@ -1,6 +1,8 @@
-"""Pillar 3 Streamlit Application Entrypoint: Landing Page, Two Option Cards, Product Insights & Sandbox Control Deck."""
+"""Pillar 3 Streamlit Application Entrypoint: Multi-Page Navigation via st.Page & st.navigation."""
 
+import os
 from pathlib import Path
+import re
 import sys
 import uuid
 
@@ -11,96 +13,144 @@ if str(PROJECT_ROOT) not in sys.path:
 
 import streamlit as st  # noqa: E402
 
-from app.ui.components.kpi_header import render_kpi_header  # noqa: E402
-from app.ui.components.threshold_sidebar import render_sidebar  # noqa: E402
 from app.ui.views.landing_page import render_landing_page  # noqa: E402
-from app.ui.views.live_intake import render_live_intake_view  # noqa: E402
 from app.ui.views.mcp_console import render_mcp_console_view  # noqa: E402
+from app.ui.views.mcp_guides import (  # noqa: E402
+    render_claude_cursor_guide,
+    render_mcp_inspector_guide,
+)
 from app.ui.views.product_insights import render_product_insights_view  # noqa: E402
-from app.ui.views.surveyor_desk import render_surveyor_desk_view  # noqa: E402
-from app.ui.views.time_machine import render_time_machine_view  # noqa: E402
+from app.ui.views.sandbox_dashboard import render_sandbox_dashboard_page  # noqa: E402
 
 
 def sync_session_id_query_param() -> str:
     """Reads and writes ?session=<id> into URL query parameters for bookmarkable multi-user isolation."""
     query_session = st.query_params.get("session")
     if query_session:
-        st.session_state["sandbox_session_id"] = str(query_session)
-    elif "sandbox_session_id" not in st.session_state:
-        st.session_state["sandbox_session_id"] = uuid.uuid4().hex[:6]
+        cleaned = re.sub(r"[^a-zA-Z0-9_-]", "", str(query_session)).strip().lower()[:16]
+        session_id = cleaned or uuid.uuid4().hex[:6]
+    else:
+        session_id = st.session_state.get("sandbox_session_id") or uuid.uuid4().hex[:6]
 
-    active_sid = st.session_state["sandbox_session_id"]
-    if st.query_params.get("session") != active_sid:
-        st.query_params["session"] = active_sid
-    return active_sid
-
-
-def render_sandbox_workbench(session_id: str, thresholds: dict[str, float]) -> None:
-    """Renders the 4-Tab Interactive Sandbox & Visual Control Deck (Option Card 1)."""
-    top_c1, top_c2 = st.columns([0.78, 0.22])
-    with top_c1:
-        st.markdown("# 🧪 Interactive Sandbox & Visual Control Deck")
-        st.caption(
-            f"Multi-Channel Complaint Triage, TypeSafe Jev + M3NHF SOR Classification & Gating Workbench (`s_{session_id}_*`)"
-        )
-    with top_c2:
-        st.write("")
-        if st.button("← Back to Landing Page", key="sandbox_back_landing", use_container_width=True):
-            st.session_state["active_page"] = "LANDING"
-            st.rerun()
-        if st.button("📘 Product Insights →", key="sandbox_go_insights", use_container_width=True):
-            st.session_state["active_page"] = "INSIGHTS"
-            st.rerun()
-
-    render_kpi_header(session_id=session_id)
-
-    # If redirected from Landing Page Quick-Launch, show Time-Machine first
-    default_tab_order = [
-        "📨 1. Live Multi-Channel Intake (Web & WhatsApp)",
-        "⏱️ 2. Time-Machine Scenario Deck (9 Presets)",
-        "👷 3. Surveyor Review Queue & M3NHF Catalog",
-        "🤖 4. Embedded MCP Agent Console",
-    ]
-    if st.session_state.pop("active_sandbox_tab", None) == "TIME_MACHINE":
-        st.info("👇 Opened **Time-Machine Scenario Deck** from Landing Page quick-launch.")
-
-    tab_intake, tab_presets, tab_surveyor, tab_mcp = st.tabs(default_tab_order)
-
-    with tab_intake:
-        render_live_intake_view(session_id=session_id, thresholds=thresholds)
-
-    with tab_presets:
-        render_time_machine_view(session_id=session_id, thresholds=thresholds)
-
-    with tab_surveyor:
-        render_surveyor_desk_view(session_id=session_id)
-
-    with tab_mcp:
-        render_mcp_console_view(session_id=session_id)
+    st.session_state["sandbox_session_id"] = session_id
+    if st.query_params.get("session") != session_id:
+        st.query_params["session"] = session_id
+    return session_id
 
 
 def main() -> None:
-    """Main Streamlit entrypoint."""
+    """Main Streamlit entrypoint with native st.Page & st.navigation."""
     st.set_page_config(
-        page_title="Social Housing & Property Complaint Classifier Sandbox",
+        page_title="Complaint Classifier & M3NHF SOR Sandbox",
         page_icon="🏘️",
         layout="wide",
         initial_sidebar_state="expanded",
     )
 
-    if "active_page" not in st.session_state:
-        st.session_state["active_page"] = "LANDING"
-
     session_id = sync_session_id_query_param()
-    thresholds = render_sidebar(session_id=session_id)
+    docs_url = os.environ.get("SANDBOX_DOCS_URL", "http://127.0.0.1:8000/docs")
 
-    active_page = st.session_state.get("active_page", "LANDING")
-    if active_page == "SANDBOX":
-        render_sandbox_workbench(session_id=session_id, thresholds=thresholds)
-    elif active_page == "INSIGHTS":
-        render_product_insights_view(session_id=session_id)
-    else:
-        render_landing_page(session_id=session_id)
+    # Define pages with closures so each view receives page references for native st.page_link buttons
+    page_refs: dict = {}
+
+    def _home() -> None:
+        render_landing_page(
+            page_dashboard=page_refs["dashboard"],
+            page_research=page_refs["research"],
+            page_guide_claude=page_refs["guide_claude"],
+            page_mcp=page_refs["mcp"],
+            page_guide_inspector=page_refs["guide_inspector"],
+        )
+
+    def _dashboard() -> None:
+        render_sandbox_dashboard_page()
+
+    def _research() -> None:
+        render_product_insights_view(
+            session_id=session_id,
+            page_home=page_refs["home"],
+            page_dashboard=page_refs["dashboard"],
+        )
+
+    def _guide_claude() -> None:
+        render_claude_cursor_guide(
+            session_id=session_id,
+            page_dashboard=page_refs["dashboard"],
+            page_mcp=page_refs["mcp"],
+        )
+
+    def _mcp() -> None:
+        render_mcp_console_view(
+            session_id=session_id,
+            page_dashboard=page_refs["dashboard"],
+            page_guide_claude=page_refs["guide_claude"],
+            page_guide_inspector=page_refs["guide_inspector"],
+        )
+
+    def _guide_inspector() -> None:
+        render_mcp_inspector_guide(
+            session_id=session_id,
+            page_mcp=page_refs["mcp"],
+        )
+
+    page_refs["home"] = st.Page(
+        _home,
+        title="Overview & Guided Walkthrough",
+        icon="🧭",
+        default=True,
+        url_path="overview",
+    )
+    page_refs["dashboard"] = st.Page(
+        _dashboard,
+        title="Live Sandbox Dashboard",
+        icon="🎛️",
+        url_path="sandbox",
+    )
+    page_refs["research"] = st.Page(
+        _research,
+        title="Research & Product Decisions",
+        icon="📘",
+        url_path="research",
+    )
+    page_refs["guide_claude"] = st.Page(
+        _guide_claude,
+        title="Guide: Claude & Cursor (Option 1)",
+        icon="🖥️",
+        url_path="mcp-claude-cursor",
+    )
+    page_refs["mcp"] = st.Page(
+        _mcp,
+        title="Console: MCP Agent (Option 2)",
+        icon="🤖",
+        url_path="mcp-console",
+    )
+    page_refs["guide_inspector"] = st.Page(
+        _guide_inspector,
+        title="Guide: MCP Inspector (Option 3)",
+        icon="🔍",
+        url_path="mcp-inspector",
+    )
+
+    pg = st.navigation(
+        {
+            "Sandbox Core": [
+                page_refs["home"],
+                page_refs["dashboard"],
+                page_refs["research"],
+            ],
+            "MCP Integration Guides": [
+                page_refs["guide_claude"],
+                page_refs["mcp"],
+                page_refs["guide_inspector"],
+            ],
+        }
+    )
+
+    with st.sidebar:
+        st.caption(f"🔒 **Isolated Session:** `{session_id}` (`?session={session_id}`)")
+        st.markdown(f"📖 **[OpenAPI `/docs` ↗]({docs_url})**")
+
+    pg.run()
 
 
 if __name__ == "__main__":

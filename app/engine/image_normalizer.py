@@ -76,11 +76,11 @@ def prepare_image_for_jev(
 
 
 SYNTHETIC_IMAGE_CATALOG: Dict[str, str] = {
-    "cistern_valve": "WC Cistern Overflow & Float Valve (Plumbing 114010)",
-    "sink_leak": "Under-Sink Pipe & Push-Fit Waste Trap Leak (Plumbing 112001 / 112005)",
-    "black_mould": "Awaab's Law Black Mould on Window Reveal (Damp 241001)",
-    "ceiling_light_leak": "Emergency Water Ingress Through Ceiling Rose (Electrical 611001)",
-    "broken_hinge": "Snapped Kitchen Base Unit Concealed Hinge (Joinery 415011)",
+    "cistern_valve": "WC Cistern Overflow & Float Valve (Plumbing 194010)",
+    "sink_leak": "Under-Sink Pipe & Push-Fit Waste Trap Leak (Plumbing 192001 / 192005)",
+    "black_mould": "Awaab's Law Black Mould on Window Reveal (Damp 114001)",
+    "ceiling_light_leak": "Emergency Water Ingress Through Ceiling Rose (Electrical 211001)",
+    "broken_hinge": "Snapped Kitchen Base Unit Concealed Hinge (Joinery 125011)",
     "inappropriate_placeholder": "Simulated Inappropriate / Rude Photo Attachment (Safety Gate Test)",
 }
 

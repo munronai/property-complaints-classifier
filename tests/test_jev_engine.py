@@ -115,7 +115,7 @@ class TestImageNormalizationAndJevEngine(unittest.TestCase):
                 if preset.preset_id == "preset_completed_repair_complaint":
                     self.assertIsNotNone(ticket.stage2_output)
                     self.assertEqual(ticket.decision.assigned_trade, "PLUM")
-                    self.assertEqual(ticket.decision.assigned_sor, "112005")
+                    self.assertEqual(ticket.decision.assigned_sor, "192005")
                     self.assertTrue(ticket.decision.is_completed_job_recall)
 
 

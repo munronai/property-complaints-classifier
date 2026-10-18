@@ -17,7 +17,7 @@ class TicketApprovalRequest(BaseModel):
     session_id: str = Field(default="default")
     override_sor: Optional[str] = Field(
         default=None,
-        description="Optional replacement 6-digit M3NHF SOR code (e.g. '112005')",
+        description="Optional replacement 6-digit M3NHF SOR code (e.g. '192005')",
     )
     surveyor_notes: Optional[str] = Field(
         default=None,

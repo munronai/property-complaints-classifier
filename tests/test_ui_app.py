@@ -3,7 +3,7 @@
 import unittest
 
 from app.ui.api_client import SandboxAPIClient
-from app.ui.views.mcp_console import execute_embedded_mcp_tool
+from app.ui.views.mcp_console import discover_mcp_primitives, execute_embedded_mcp_tool
 
 
 class TestStreamlitUIComponentsAndClient(unittest.TestCase):
@@ -32,10 +32,20 @@ class TestStreamlitUIComponentsAndClient(unittest.TestCase):
         )
         self.assertIsNotNone(tkt)
         self.assertTrue(tkt["decision"]["is_completed_job_recall"])
-        self.assertEqual(tkt["decision"]["assigned_sor"], "112005")
+        self.assertEqual(tkt["decision"]["assigned_sor"], "192005")
 
-    def test_embedded_mcp_console_tool_runner(self) -> None:
-        """Verifies Option 2 Embedded MCP Console executes tools and returns structured JSON."""
+        rst = self.client.reset_workspace(session_id="ui_tester")
+        self.assertIsNotNone(rst)
+        self.assertEqual(rst["status"], "session_reset_complete")
+
+    def test_embedded_mcp_console_tool_runner_and_discovery(self) -> None:
+        """Verifies Option 2 Embedded MCP Console discovers primitives and executes tools cleanly."""
+        discovered = discover_mcp_primitives()
+        self.assertIn("tools", discovered)
+        self.assertEqual(len(discovered["tools"]), 4)
+        self.assertIn("resources", discovered)
+        self.assertIn("templates", discovered)
+
         res = execute_embedded_mcp_tool(
             "get_latest_triage",
             {"property_id": "prop_oak_01", "session_id": "ui_mcp_test"},
@@ -48,27 +58,26 @@ class TestStreamlitUIComponentsAndClient(unittest.TestCase):
         """Verifies all modular UI views and components import without syntax or circular import errors."""
         import app.ui.components.help_and_presets as hp
         import app.ui.components.kpi_header as kh
+        import app.ui.components.mermaid as mm
         import app.ui.components.probability_charts as pc
-        import app.ui.components.threshold_sidebar as ts
         import app.ui.dashboard_app as da
         import app.ui.views.landing_page as lp
-        import app.ui.views.live_intake as li
         import app.ui.views.mcp_console as mc
+        import app.ui.views.mcp_guides as mg
         import app.ui.views.product_insights as pi
-        import app.ui.views.surveyor_desk as sd
-        import app.ui.views.time_machine as tm
+        import app.ui.views.sandbox_dashboard as sd
 
         self.assertTrue(callable(da.main))
         self.assertTrue(callable(lp.render_landing_page))
+        self.assertTrue(callable(sd.render_sandbox_dashboard_page))
         self.assertTrue(callable(pi.render_product_insights_view))
-        self.assertTrue(callable(li.render_live_intake_view))
-        self.assertTrue(callable(tm.render_time_machine_view))
-        self.assertTrue(callable(sd.render_surveyor_desk_view))
         self.assertTrue(callable(mc.render_mcp_console_view))
+        self.assertTrue(callable(mg.render_claude_cursor_guide))
+        self.assertTrue(callable(mg.render_mcp_inspector_guide))
         self.assertTrue(callable(hp.render_help_and_presets_section))
         self.assertTrue(callable(kh.render_kpi_header))
         self.assertTrue(callable(pc.render_ticket_inspection_card))
-        self.assertTrue(callable(ts.render_sidebar))
+        self.assertTrue(callable(mm.st_mermaid))
 
 
 if __name__ == "__main__":

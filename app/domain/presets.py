@@ -57,10 +57,10 @@ SCENARIO_PRESETS: List[ScenarioPreset] = [
         ),
         synthetic_image_preset="cistern_valve",
         what_it_tests=(
-            "Nominal happy path: unambiguous plumbing defect (PLUM -> M3NHF 114010) with high trade "
+            "Nominal happy path: unambiguous plumbing defect (PLUM -> M3NHF 194010) with high trade "
             "confidence (>0.85), high SOR confidence (>0.80), clear margin (>0.15), and no statutory damp."
         ),
-        expected_outcome="Passes all gating checks and automatically raises M3NHF works order 114010.",
+        expected_outcome="Passes all gating checks and automatically raises M3NHF works order 194010.",
         expected_destination=RoutingDestination.AUTO_DISPATCH_HMS,
         expected_reasons=[],
     ),
@@ -77,7 +77,7 @@ SCENARIO_PRESETS: List[ScenarioPreset] = [
         synthetic_image_preset="sink_leak",
         what_it_tests=(
             "Tests the Top-1 vs. Top-2 probability margin circuit breaker: Stage 1 is confident it is "
-            "PLUM (88%), but Stage 2 splits probability closely between 112001 (54%) and 112005 (44%)."
+            "PLUM (88%), but Stage 2 splits probability closely between 192001 (54%) and 192005 (44%)."
         ),
         expected_outcome="Blocked from auto-dispatch due to LOW_SOR_CONFIDENCE & AMBIGUOUS_SOR_MARGIN (<0.15).",
         expected_destination=RoutingDestination.SURVEYOR_DESK_REVIEW,
@@ -98,7 +98,7 @@ SCENARIO_PRESETS: List[ScenarioPreset] = [
         ),
         synthetic_image_preset="black_mould",
         what_it_tests=(
-            "Statutory Awaab's Law guardrail: even when the model identifies DAMP -> 241001 with high "
+            "Statutory Awaab's Law guardrail: even when the model identifies DAMP -> 114001 with high "
             "confidence, damp hazard probability >= 0.40 forces mandatory escalation."
         ),
         expected_outcome="Hard override to DISREPAIR_LEGAL_TEAM for statutory Awaab's Law inspection timeline.",
@@ -134,9 +134,9 @@ SCENARIO_PRESETS: List[ScenarioPreset] = [
         synthetic_image_preset="broken_hinge",
         what_it_tests=(
             "Demonstrates how TypeSafe Jev uses visual tokens in the attached photo to resolve vague "
-            "resident text ('metal thing snapped') into JOIN -> M3NHF 415011 (kitchen unit door & hinges)."
+            "resident text ('metal thing snapped') into JOIN -> M3NHF 125011 (kitchen unit door & hinges)."
         ),
-        expected_outcome="Confidently resolves JOIN -> 415011 and auto-dispatches to HMS.",
+        expected_outcome="Confidently resolves JOIN -> 125011 and auto-dispatches to HMS.",
         expected_destination=RoutingDestination.AUTO_DISPATCH_HMS,
         expected_reasons=[],
     ),
@@ -192,10 +192,10 @@ SCENARIO_PRESETS: List[ScenarioPreset] = [
         existing_job_ref="JOB-77210",
         what_it_tests=(
             "Assesses a complaint about a COMPLETED repair job: runs BOTH Pass 1 and Pass 2 to scope "
-            "the remedial trade/SOR code (PLUM -> 112005), then routes to QUALITY_RECALL_SURVEYOR_REVIEW "
+            "the remedial trade/SOR code (PLUM -> 192005), then routes to QUALITY_RECALL_SURVEYOR_REVIEW "
             "so the landlord recalls the contractor instead of paying twice."
         ),
-        expected_outcome="Scopes remedial SOR 112005 and routes to QUALITY_RECALL_SURVEYOR_REVIEW.",
+        expected_outcome="Scopes remedial SOR 192005 and routes to QUALITY_RECALL_SURVEYOR_REVIEW.",
         expected_destination=RoutingDestination.QUALITY_RECALL_SURVEYOR_REVIEW,
         expected_reasons=[EscalationReason.POST_REPAIR_QUALITY_COMPLAINT],
     ),

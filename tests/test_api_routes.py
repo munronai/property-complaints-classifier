@@ -45,7 +45,7 @@ class TestModularFastAPIRoutes(unittest.TestCase):
         self.assertEqual(triage_resp.status_code, 200)
         tkt = triage_resp.json()
         self.assertTrue(tkt["decision"]["auto_approve"])
-        self.assertEqual(tkt["decision"]["assigned_sor"], "114010")
+        self.assertEqual(tkt["decision"]["assigned_sor"], "194010")
         self.assertEqual(tkt["property_id"], "s_api_test_user_prop_oak_01")
 
         # 2. WhatsApp Webhook for a Completed Repair Job Quality Complaint
@@ -67,11 +67,27 @@ class TestModularFastAPIRoutes(unittest.TestCase):
         wa_tkt = wa_resp.json()
         self.assertEqual(wa_tkt["channel"], "WHATSAPP")
         self.assertTrue(wa_tkt["decision"]["is_completed_job_recall"])
-        self.assertEqual(wa_tkt["decision"]["assigned_sor"], "112005")
+        self.assertEqual(wa_tkt["decision"]["assigned_sor"], "192005")
         self.assertEqual(
             wa_tkt["decision"]["destination"],
             RoutingDestination.QUALITY_RECALL_SURVEYOR_REVIEW.value,
         )
+
+        # 3. Twilio WhatsApp Form Webhook returning TwiML
+        twilio_resp = self.client.post(
+            "/api/v1/webhooks/whatsapp/twilio?session=api_test_user",
+            data={
+                "From": "whatsapp:+447700900123",
+                "Body": "Water is leaking through ceiling rose! #oak",
+                "NumMedia": "0",
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+        self.assertEqual(twilio_resp.status_code, 200)
+        self.assertIn("application/xml", twilio_resp.headers["content-type"])
+        self.assertIn("<Response>", twilio_resp.text)
+        self.assertIn("<Message>", twilio_resp.text)
+        self.assertIn("Ref:", twilio_resp.text)
 
     def test_simulate_preset_and_surveyor_override(self) -> None:
         """Tests POST /api/v1/simulate and POST /api/v1/tickets/{ticket_id}/approve."""
@@ -91,19 +107,19 @@ class TestModularFastAPIRoutes(unittest.TestCase):
             RoutingDestination.SURVEYOR_DESK_REVIEW.value,
         )
 
-        # Surveyor overrides SOR from 112001 to 112005 and approves
+        # Surveyor overrides SOR from 192001 to 192005 and approves
         approve_resp = self.client.post(
             f"/api/v1/tickets/{ticket_id}/approve",
             json={
                 "session_id": "surveyor_test",
-                "override_sor": "112005",
-                "surveyor_notes": "Confirmed push-fit waste trap leak from photo; dispatching 112005.",
+                "override_sor": "192005",
+                "surveyor_notes": "Confirmed push-fit waste trap leak from photo; dispatching 192005.",
             },
         )
         self.assertEqual(approve_resp.status_code, 200)
         updated = approve_resp.json()
         self.assertTrue(updated["decision"]["auto_approve"])
-        self.assertEqual(updated["decision"]["assigned_sor"], "112005")
+        self.assertEqual(updated["decision"]["assigned_sor"], "192005")
         self.assertEqual(updated["status"], TicketStatus.SURVEYOR_OVERRIDDEN.value)
 
     def test_reset_endpoint_enforces_admin_key_for_global_wipe(self) -> None:
