@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "complaint-classifier"
+version = "0.1.0"
+description = "Tri-Pillar Social Housing & Property Complaint Classifier Sandbox using TypeSafe Jev and M3NHF SOR Codes"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
+    "fastmcp>=0.4.0",
+    "mcp[cli]>=1.2.0",
+    "httpx>=0.27.0",
+    "requests>=2.32.0",
+    "pydantic>=2.9.0",
+    "pillow>=10.4.0",
+    "streamlit>=1.40.0",
+    "pandas>=2.2.0",
+    "python-dotenv>=1.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.6.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
