@@ -1,7 +1,8 @@
 """M3NHF Schedule of Rates (SOR) Catalog and Stage 1 TypeSafe Jev criteria definitions."""
 
+import copy
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from app.domain.enums import MessageIntent, TradeCode
 
 
@@ -74,8 +75,8 @@ REPAIR_PRIORITY_LEVELS: Dict[str, str] = {
 }
 
 
-# Curated M3NHF Schedule of Rates Catalog structured by standard trade chapters
-M3NHF_SOR_CATALOG: Dict[TradeCode, List[SORItem]] = {
+# Immutable Golden Base Set of M3NHF Schedule of Rates Catalog structured by standard trade chapters
+BASE_M3NHF_SOR_CATALOG: Dict[TradeCode, List[SORItem]] = {
     TradeCode.PLUM: [
         SORItem(
             sor_code="192001",
@@ -306,6 +307,9 @@ M3NHF_SOR_CATALOG: Dict[TradeCode, List[SORItem]] = {
     ],
 }
 
+# Active mutable M3NHF SOR Catalog (starts as a copy of the 17-item Base Set, expandable up to 20 per trade via Phase 4 feed)
+M3NHF_SOR_CATALOG: Dict[TradeCode, List[SORItem]] = copy.deepcopy(BASE_M3NHF_SOR_CATALOG)
+
 
 def get_candidate_sors_for_trade(trade: str) -> Dict[str, str]:
     """Returns the trade-bounded M3NHF candidate map (code -> description) for Jev Pass 2."""
@@ -325,11 +329,102 @@ def get_candidate_sors_for_trade(trade: str) -> Dict[str, str]:
 
 
 def get_sor_item(sor_code: Optional[str]) -> Optional[SORItem]:
-    """Looks up full M3NHF SOR metadata by 6-digit code."""
+    """Looks up full M3NHF SOR metadata by 6-digit code across active catalog and extended feed."""
     if not sor_code or sor_code == "OTHER":
         return None
     for items in M3NHF_SOR_CATALOG.values():
         for item in items:
             if item.sor_code == sor_code:
                 return item
+    # Fallback lookup in the extended Phase 4 feed so previously triaged tickets still resolve descriptions after reset
+    try:
+        from app.data_pipeline.taxonomy import ADDITIONAL_M3NHF_SOR_BY_TRADE
+
+        for items in ADDITIONAL_M3NHF_SOR_BY_TRADE.values():
+            for item in items:
+                if item.sor_code == sor_code:
+                    return item
+    except Exception:
+        pass
     return None
+
+
+def get_catalog_summary() -> Dict[str, Any]:
+    """Returns counts per trade, base counts, and expansion status of the active M3NHF SOR catalog."""
+    counts_by_trade = {
+        trade.value: len(items) for trade, items in M3NHF_SOR_CATALOG.items()
+    }
+    base_counts_by_trade = {
+        trade.value: len(items) for trade, items in BASE_M3NHF_SOR_CATALOG.items()
+    }
+    total_active = sum(counts_by_trade.values())
+    total_base = sum(base_counts_by_trade.values())
+    return {
+        "total_active_codes": total_active,
+        "total_base_codes": total_base,
+        "is_expanded": total_active > total_base,
+        "counts_by_trade": counts_by_trade,
+        "base_counts_by_trade": base_counts_by_trade,
+    }
+
+
+def reset_sor_catalog_to_base() -> Dict[str, Any]:
+    """Resets the active M3NHF_SOR_CATALOG in-place back to the Golden Base Set."""
+    M3NHF_SOR_CATALOG.clear()
+    for trade, items in copy.deepcopy(BASE_M3NHF_SOR_CATALOG).items():
+        M3NHF_SOR_CATALOG[trade] = items
+    summary = get_catalog_summary()
+    return {
+        "status": "sor_catalog_reset_to_base",
+        **summary,
+    }
+
+
+def refresh_sor_catalog_for_trade(
+    trade: str | TradeCode,
+    max_codes: int = 20,
+) -> Dict[str, Any]:
+    """Imports up to max_codes (up to 20) M3NHF SOR codes for a trade (or 'ALL') from the Phase 4 Open-Data Feed."""
+    from app.data_pipeline.taxonomy import get_feed_sors_for_trade
+
+    bounded_max = max(1, min(int(max_codes), 20))
+    trade_str = trade.value if isinstance(trade, TradeCode) else str(trade).strip().upper()
+
+    refreshed_trades: List[str] = []
+    if trade_str == "ALL":
+        target_trades = [
+            TradeCode.PLUM,
+            TradeCode.DAMP,
+            TradeCode.ROOF,
+            TradeCode.JOIN,
+            TradeCode.ELEC,
+            TradeCode.PLAS,
+        ]
+    else:
+        try:
+            t_enum = TradeCode(trade_str)
+        except ValueError as exc:
+            raise ValueError(
+                f"Unsupported trade code '{trade_str}'. Choose PLUM, DAMP, ROOF, JOIN, ELEC, PLAS, or ALL."
+            ) from exc
+        if t_enum == TradeCode.OTHER:
+            raise ValueError("Cannot import M3NHF SOR feed for trade 'OTHER'.")
+        target_trades = [t_enum]
+
+    imported_codes: List[str] = []
+    for t_enum in target_trades:
+        feed_items = get_feed_sors_for_trade(t_enum, max_codes=bounded_max)
+        M3NHF_SOR_CATALOG[t_enum] = list(feed_items)
+        refreshed_trades.append(t_enum.value)
+        imported_codes.extend(item.sor_code for item in feed_items)
+
+    summary = get_catalog_summary()
+    return {
+        "status": "sor_catalog_refreshed",
+        "refreshed_trades": refreshed_trades,
+        "max_codes_per_trade": bounded_max,
+        "imported_count": len(imported_codes),
+        "imported_codes": imported_codes,
+        **summary,
+    }
+

@@ -24,7 +24,7 @@ image = (
     .add_local_python_source("app")
 )
 
-SECRETS = [modal.Secret.from_name("complaint-sandbox-secrets", required=False)]
+SECRETS = [modal.Secret.from_name("complaint-sandbox-secrets")]
 
 
 # 1. Public FastAPI REST API & Mounted FastMCP SSE Service

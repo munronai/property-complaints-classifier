@@ -8,7 +8,7 @@ import streamlit as st
 
 from app.config import settings
 from app.domain.presets import GOLDEN_PROPERTIES, SCENARIO_PRESETS
-from app.domain.sor_catalog import M3NHF_SOR_CATALOG, get_sor_item
+from app.domain.sor_catalog import M3NHF_SOR_CATALOG, get_catalog_summary, get_sor_item
 from app.engine.image_normalizer import (
     SYNTHETIC_IMAGE_CATALOG,
     generate_synthetic_defect_image,
@@ -391,19 +391,83 @@ def render_sandbox_dashboard_page() -> None:
 
         st.divider()
 
-        # 5. Workspace Reset & Protected System Admin Wipe
+        # 4. Phase 4 Open-Data Feed: Refresh / Import SOR Codes by Trade
+        st.subheader("📚 4. Refresh SOR Codes (Phase 4 Feed)")
+        cat_summary = get_catalog_summary()
+        total_active_sors = cat_summary.get("total_active_codes", 17)
+        base_total_sors = cat_summary.get("base_total_codes", 17)
+        is_expanded = cat_summary.get("is_expanded", False)
+        status_badge = (
+            f"🟢 Expanded Schedule ({total_active_sors} active codes)"
+            if is_expanded
+            else f"⚪ Base Schedule ({base_total_sors} core codes)"
+        )
+        st.caption(
+            f"**Current Schedule:** {status_badge}  \n"
+            "Import up to **20 authentic M3NHF v8 codes** for a selected trade from the Phase 4 Open-Data Feed "
+            "to test wider defect scenarios without Stage 2 falling back to `OTHER`."
+        )
+
+        trade_feed_options = {
+            "PLUM": f"🚰 PLUM — Plumbing & Heating ({cat_summary['counts_by_trade'].get('PLUM', 3)}/20 active)",
+            "DAMP": f"🌧️ DAMP — Damp, Mould & Condensation ({cat_summary['counts_by_trade'].get('DAMP', 3)}/20 active)",
+            "ROOF": f"🏠 ROOF — Roofing & Rainwater Goods ({cat_summary['counts_by_trade'].get('ROOF', 3)}/20 active)",
+            "JOIN": f"🪚 JOIN — Carpentry & Joinery ({cat_summary['counts_by_trade'].get('JOIN', 3)}/20 active)",
+            "ELEC": f"⚡ ELEC — Electrical & Extraction ({cat_summary['counts_by_trade'].get('ELEC', 3)}/20 active)",
+            "PLAS": f"🧱 PLAS — Plastering & Wall Finishes ({cat_summary['counts_by_trade'].get('PLAS', 2)}/20 active)",
+            "ALL": f"🌐 ALL — Import Up to 20 Codes Across All 6 Trades ({total_active_sors}/120 active)",
+        }
+        selected_feed_trade = st.selectbox(
+            "Select Trade Type to Refresh",
+            options=list(trade_feed_options.keys()),
+            format_func=lambda k: trade_feed_options[k],
+            key="sb_feed_trade_select",
+        )
+        selected_max_codes = st.slider(
+            "Max SOR Codes for Trade (Up to 20)",
+            min_value=5,
+            max_value=20,
+            value=20,
+            step=1,
+            key="sb_feed_max_codes",
+            help="Target number of M3NHF SOR codes to populate for the chosen trade (maximum 20 per trade).",
+        )
+        if st.button("📥 Refresh SOR Catalog from Feed", use_container_width=True):
+            refresh_res = api_client.refresh_sor_catalog(
+                trade=selected_feed_trade,
+                max_codes=selected_max_codes,
+                session_id=session_id,
+            )
+            if refresh_res:
+                added_n = len(refresh_res.get("added_codes", []))
+                new_total = refresh_res.get("total_active_codes", total_active_sors)
+                st.session_state["last_ui_feedback"] = (
+                    f"📚 **M3NHF Schedule Refreshed (`{selected_feed_trade}`):** Imported **{added_n}** additional "
+                    f"SOR codes from the Phase 4 feed (target up to **{selected_max_codes}** codes/trade; "
+                    f"**{new_total}** total active codes in catalog)."
+                )
+                st.toast(f"Imported {added_n} SOR codes for {selected_feed_trade}!", icon="📚")
+                st.rerun()
+
+        st.divider()
+
+        # 5. Workspace Reset & Protected System Admin Wipe (Resets both tickets & SOR Catalog back to Base Set)
         if st.button("🔄 Reset My Workspace to Baseline", use_container_width=True):
             res = api_client.reset_workspace(session_id=session_id, reset_all=False)
             if res is not None:
                 st.session_state.pop("active_inspected_ticket", None)
                 st.session_state["last_ui_feedback"] = (
-                    f"🔄 Reset your isolated workspace (`s_{session_id}_*`) back to the clean 3-ticket baseline."
+                    f"🔄 **Reset to Baseline Complete:** Workspace (`s_{session_id}_*`) restored to the clean "
+                    f"3-ticket baseline AND M3NHF Schedule of Rates reset to the **{base_total_sors}-code Base Set**."
                 )
-                st.toast("Workspace reset to baseline!", icon="🔄")
+                st.toast("Workspace & SOR schedule reset to baseline!", icon="🔄")
                 st.rerun()
 
         with st.expander("⚙️ System Admin Reset (Protected)", expanded=False):
-            st.caption("Requires `SANDBOX_ADMIN_KEY` (default: `sor-admin-secret-2026`).")
+            st.caption(
+                f"Requires `SANDBOX_ADMIN_KEY` (default: `sor-admin-secret-2026`). "
+                f"Wipes all user sessions, reseeds Golden Baseline, and resets the M3NHF SOR schedule to the {base_total_sors}-code Base Set."
+            )
             sys_admin_key = st.text_input(
                 "System Admin Key",
                 type="password",
@@ -422,9 +486,10 @@ def render_sandbox_dashboard_page() -> None:
                     if res is not None:
                         st.session_state.pop("active_inspected_ticket", None)
                         st.session_state["last_ui_feedback"] = (
-                            "🧹 **Full System Wipe Completed:** All sessions and Golden Baseline reseeded."
+                            f"🧹 **Full System Wipe Completed:** All sessions and Golden Baseline reseeded, "
+                            f"and M3NHF Schedule of Rates reset to the **{base_total_sors}-code Base Set**."
                         )
-                        st.toast("Full system wipe completed!", icon="🧹")
+                        st.toast("Full system wipe & SOR schedule reset completed!", icon="🧹")
                         st.rerun()
 
     # =====================================================================
@@ -596,9 +661,62 @@ def render_sandbox_dashboard_page() -> None:
                 st.warning(f"📋 {comp}")
 
         with tab_catalog:
+            tab_cat_summary = get_catalog_summary()
             st.caption(
-                "Stage 2 bounds TypeSafe Jev strictly to the M3NHF codes matching the Stage 1 trade:"
+                "Stage 2 bounds TypeSafe Jev strictly to the M3NHF codes matching the Stage 1 trade. "
+                "Use the Phase 4 Open-Data Feed controls below (or in the sidebar) to import up to **20 SOR codes** "
+                "for any trade so custom repairs resolve to exact M3NHF codes rather than `OTHER`."
             )
+
+            with st.container(border=True):
+                c_col1, c_col2, c_col3, c_col4 = st.columns([0.38, 0.24, 0.20, 0.18])
+                with c_col1:
+                    inline_trade = st.selectbox(
+                        "Trade Feed to Import",
+                        options=["PLUM", "DAMP", "ROOF", "JOIN", "ELEC", "PLAS", "ALL"],
+                        format_func=lambda t: (
+                            f"ALL Trades ({tab_cat_summary.get('total_active_codes', 17)}/120)"
+                            if t == "ALL"
+                            else f"{t} ({tab_cat_summary['counts_by_trade'].get(t, 0)}/20 codes)"
+                        ),
+                        key="inline_cat_trade_select",
+                    )
+                with c_col2:
+                    inline_max = st.slider(
+                        "Max Codes / Trade",
+                        min_value=5,
+                        max_value=20,
+                        value=20,
+                        step=1,
+                        key="inline_cat_max_codes",
+                    )
+                with c_col3:
+                    st.write("")
+                    if st.button("📥 Import up to N Codes", key="inline_cat_import_btn", use_container_width=True):
+                        r_res = api_client.refresh_sor_catalog(
+                            trade=inline_trade,
+                            max_codes=inline_max,
+                            session_id=session_id,
+                        )
+                        if r_res:
+                            added_count = len(r_res.get("added_codes", []))
+                            st.session_state["last_ui_feedback"] = (
+                                f"📚 **M3NHF Schedule Refreshed (`{inline_trade}`):** Imported **{added_count}** "
+                                f"codes from Phase 4 feed (**{r_res.get('total_active_codes')}** total active codes)."
+                            )
+                            st.toast(f"Imported {added_count} codes for {inline_trade}!", icon="📚")
+                            st.rerun()
+                with c_col4:
+                    st.write("")
+                    base_n = tab_cat_summary.get('base_total_codes', 18)
+                    if st.button(f"↩️ Reset to Base ({base_n})", key="inline_cat_reset_btn", use_container_width=True):
+                        rst_res = api_client.reset_sor_catalog()
+                        if rst_res:
+                            st.session_state["last_ui_feedback"] = (
+                                f"↩️ **M3NHF Schedule Reset:** Restored active SOR catalog to the **{base_n}-code Base Set**."
+                            )
+                            st.toast(f"Reset SOR catalog to {base_n}-code Base Set!", icon="↩️")
+                            st.rerun()
 
             # Determine selected SOR code from the active inspected ticket
             active_sor_code = None

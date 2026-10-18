@@ -95,7 +95,9 @@ def render_claude_cursor_guide(
         )
 
     st.divider()
-    st.subheader("3. Step-by-Step Agent Prompt Playbook (Copy & Paste into Claude or Cursor)")
+    st.subheader(
+        "3. Step-by-Step Agent Prompt Playbook (Copy & Paste into Claude or Cursor)"
+    )
     st.markdown(
         "How does a human or autonomous housing officer actually prompt an AI agent so that it uses our **MCP Resources** "
         "and **MCP Tools**? Try this 3-step closed-loop sequence:"
@@ -105,7 +107,9 @@ def render_claude_cursor_guide(
     with p1:
         with st.container(border=True):
             st.markdown("##### Step 1: Read Clean Baseline State")
-            st.caption("Triggers `get_latest_triage` tool or `sor://properties/{id}/latest-triage` resource:")
+            st.caption(
+                "Triggers `get_latest_triage` tool or `sor://properties/{id}/latest-triage` resource:"
+            )
             st.code(
                 f'Use the housing-sor-triage MCP server (session_id="{session_id}") to check the latest triage state for property "prop_oak_01". Confirm that the baseline ticket TKT-BASE-03 is a clean, auto-dispatched plumbing repair (114010).',
                 language="text",
@@ -113,7 +117,9 @@ def render_claude_cursor_guide(
     with p2:
         with st.container(border=True):
             st.markdown("##### Step 2: Inject a Critical or Ambiguous Preset")
-            st.caption("Triggers `simulate_complaint_event` or `submit_complaint_triage`:")
+            st.caption(
+                "Triggers `simulate_complaint_event` or `submit_complaint_triage`:"
+            )
             st.code(
                 f'Use simulate_complaint_event with preset_id="preset_ambiguous_margin" (or "preset_awaabs_law_damp") and session_id="{session_id}". Explain why Stage 4 blocked auto-dispatch and what ticket_id was created.',
                 language="text",
@@ -121,7 +127,9 @@ def render_claude_cursor_guide(
     with p3:
         with st.container(border=True):
             st.markdown("##### Step 3: Approve / Override Work Order")
-            st.caption("Triggers `approve_or_override_work_order` human-in-the-loop actuator:")
+            st.caption(
+                "Triggers `approve_or_override_work_order` human-in-the-loop actuator:"
+            )
             st.code(
                 f'Use approve_or_override_work_order on the paused ticket from Step 2 in session_id="{session_id}" to override the M3NHF SOR code to "192005" with surveyor_notes="Confirmed push-fit waste trap leak via photo".',
                 language="text",
@@ -135,7 +143,9 @@ def render_claude_cursor_guide(
     )
 
     for p in SCENARIO_PRESETS:
-        with st.expander(f"📋 **{p.title}** (`{p.preset_id}`) — Expected Route: `{p.expected_destination.value}`"):
+        with st.expander(
+            f"📋 **{p.title}** (`{p.preset_id}`) — Expected Route: `{p.expected_destination.value}`"
+        ):
             st.markdown(f"**Why this scenario matters:** {p.what_it_tests}")
             st.markdown("**Copy-Paste Agent Prompt:**")
             prompt_txt = PRESET_MCP_PROMPTS.get(p.preset_id, "")
@@ -151,7 +161,9 @@ def render_mcp_inspector_guide(
 
     top_col1, top_col2 = st.columns([0.72, 0.28])
     with top_col1:
-        st.title("🔍 Guide: Inspecting the Server via Official MCP Inspector (Option 3)")
+        st.title(
+            "🔍 Guide: Inspecting the Server via Official MCP Inspector (Option 3)"
+        )
         st.markdown(
             "Developers and protocol engineers can inspect the raw JSON-RPC 2.0 schemas, resources, and tool "
             "definitions exposed by this sandbox using the official open-source **Anthropic MCP Inspector**."
@@ -169,19 +181,19 @@ def render_mcp_inspector_guide(
     st.divider()
 
     st.subheader("1. Launch the Official Inspector CLI")
-    st.markdown("Ensure the FastAPI server is running on port `8000`, then run this command in your terminal:")
+    st.markdown(
+        "Ensure the FastAPI server is running on port `8000`, then run this command in your terminal:"
+    )
     st.code(
-        f"npx @modelcontextprotocol/inspector {mcp_url}",
+        f"npx @modelcontextprotocol/inspector@latest {mcp_url}",
         language="bash",
     )
 
     st.subheader("2. Connect in the Inspector Web UI")
-    st.markdown(
-        f"""
+    st.markdown(f"""
         1. Open the local URL printed in your terminal (typically `http://localhost:5173` or `http://localhost:6274`).
         2. Set **Transport Type** to **`SSE`**.
         3. Set **URL** to **`{mcp_url}`** and click **Connect**.
         4. Navigate to the **Resources** tab to inspect `sor://properties/prop_oak_01/latest-triage` and dynamic template `sor://properties/{{property_id}}/latest-triage`.
         5. Navigate to the **Tools** tab to test `get_latest_triage`, `submit_complaint_triage`, `simulate_complaint_event`, and `approve_or_override_work_order` with your active `session_id` (`{session_id}`).
-        """
-    )
+        """)

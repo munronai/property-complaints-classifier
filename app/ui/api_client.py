@@ -18,6 +18,9 @@ from app.domain.sor_catalog import (
     MESSAGE_INTENT_CRITERIA,
     REPAIR_PRIORITY_LEVELS,
     TRADE_CRITERIA,
+    get_catalog_summary,
+    refresh_sor_catalog_for_trade,
+    reset_sor_catalog_to_base,
 )
 from app.engine.image_normalizer import SYNTHETIC_IMAGE_CATALOG
 from app.storage.session_store import PermissionDeniedError, session_store
@@ -112,8 +115,54 @@ class SandboxAPIClient:
                 trade.value: [asdict(item) for item in items]
                 for trade, items in M3NHF_SOR_CATALOG.items()
             },
+            "catalog_summary": get_catalog_summary(),
             "synthetic_images": SYNTHETIC_IMAGE_CATALOG,
         }
+
+    def refresh_sor_catalog(
+        self,
+        trade: str,
+        max_codes: int = 20,
+        session_id: str = "default",
+    ) -> Optional[Dict[str, Any]]:
+        """Imports up to `max_codes` (up to 20) SOR codes for `trade` from the Phase 4 feed."""
+        body = {
+            "trade": trade,
+            "max_codes": max_codes,
+            "session_id": session_id,
+        }
+        res = self._request("POST", "/catalog/refresh", json_body=body)
+        if isinstance(res, dict):
+            if res.get("_api_error"):
+                return None
+            # Also synchronize in-process catalog in case Streamlit reads M3NHF_SOR_CATALOG directly
+            try:
+                refresh_sor_catalog_for_trade(trade=trade, max_codes=max_codes)
+            except Exception:
+                pass
+            return res
+        try:
+            return refresh_sor_catalog_for_trade(trade=trade, max_codes=max_codes)
+        except Exception as exc:
+            self._record_error(f"SOR catalog refresh failed: {exc}")
+            return None
+
+    def reset_sor_catalog(self) -> Optional[Dict[str, Any]]:
+        """Resets the active M3NHF SOR catalog to the 17-code Base Set."""
+        res = self._request("POST", "/catalog/reset")
+        if isinstance(res, dict):
+            if res.get("_api_error"):
+                return None
+            try:
+                reset_sor_catalog_to_base()
+            except Exception:
+                pass
+            return res
+        try:
+            return reset_sor_catalog_to_base()
+        except Exception as exc:
+            self._record_error(f"SOR catalog reset failed: {exc}")
+            return None
 
     def get_presets(self) -> List[Dict[str, Any]]:
         res = self._request("GET", "/presets")

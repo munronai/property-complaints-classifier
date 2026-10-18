@@ -192,37 +192,195 @@ class SimulatedJevEngine:
         ):
             trade = TradeCode.OTHER.value
             trade_prob = 0.42
-        elif preset == "ceiling_light_leak" or (
-            "light fitting" in text_lower or "ceiling rose" in text_lower or "socket" in text_lower or "smoke alarm" in text_lower
+        elif preset == "ceiling_light_leak" or any(
+            kw in text_lower
+            for kw in [
+                "light fitting",
+                "ceiling rose",
+                "socket",
+                "smoke alarm",
+                "rcd",
+                "mcb",
+                "rcbo",
+                "consumer unit",
+                "circuit breaker",
+                "pull-cord",
+                "pull cord",
+                "light switch",
+                "cooker switch",
+                "fused spur",
+                "pendant",
+                "bulkhead",
+                "floodlight",
+                "carbon monoxide",
+                "electric shower",
+                "room thermostat",
+                "storage heater",
+                "intercom",
+                "earth bonding",
+                "eicr",
+            ]
         ):
             trade = TradeCode.ELEC.value
             trade_prob = 0.89
-        elif preset == "black_mould" or ("black mould" in text_lower and "pipe" not in text_lower):
+        elif preset == "black_mould" or (
+            any(
+                kw in text_lower
+                for kw in [
+                    "black mould",
+                    "mould",
+                    "rising damp",
+                    "dpc",
+                    "damp proof",
+                    "airbrick",
+                    "cavity tray",
+                    "tanking",
+                    "humidistat",
+                    "trickle vent",
+                    "piv unit",
+                    "positive input ventilation",
+                    "wet rot",
+                    "dry rot",
+                    "mastic sealant",
+                    "weep vent",
+                    "condensation",
+                ]
+            )
+            and "pipe" not in text_lower
+        ):
             trade = TradeCode.DAMP.value
             trade_prob = 0.91
         elif preset == "broken_hinge" or any(
             kw in text_lower
-            for kw in ["hinge", "cupboard door", "fire door", "handrail", "banister", "door is hanging off"]
+            for kw in [
+                "hinge",
+                "cupboard door",
+                "fire door",
+                "handrail",
+                "banister",
+                "door is hanging off",
+                "door closer",
+                "multipoint",
+                "multi-point",
+                "euro cylinder",
+                "espagnolette",
+                "window handle",
+                "window lock",
+                "sash cord",
+                "sash window",
+                "double-glazed",
+                "double glazed",
+                "window sill",
+                "floorboard",
+                "chipboard floor",
+                "skirting",
+                "architrave",
+                "pipe boxing",
+                "worktop",
+                "drawer runner",
+                "kitchen drawer",
+                "base unit carcass",
+                "mortice",
+                "deadlock",
+                "nightlatch",
+                "board up",
+            ]
         ):
             trade = TradeCode.JOIN.value
-            # Notice how having an image boosts confidence on vague text ("metal thing snapped")
-            trade_prob = 0.87 if (has_image or preset == "broken_hinge") else 0.62
+            trade_prob = 0.87 if (has_image or preset == "broken_hinge") else (0.62 if "metal thing snapped" in text_lower else 0.86)
         elif preset in ("cistern_valve", "sink_leak") or any(
             kw in text_lower
-            for kw in ["cistern", "ball valve", "siphon", "sink", "pipe", "waste trap", "leak", "plumber", "toilet"]
+            for kw in [
+                "cistern",
+                "ball valve",
+                "siphon",
+                "syphon",
+                "sink",
+                "pipe",
+                "waste trap",
+                "push-fit",
+                "plumber",
+                "toilet",
+                "wc pan",
+                "toilet seat",
+                "wc seat",
+                "stopcock",
+                "isolation valve",
+                "blocked bath",
+                "shower waste",
+                "soil stack",
+                "pillar tap",
+                "mixer tap",
+                "radiator",
+                "trv",
+                "lockshield",
+                "immersion heater",
+                "hot water cylinder",
+                "unvented cylinder",
+                "tundish",
+                "expansion vessel",
+                "standpipe",
+            ]
         ):
             trade = TradeCode.PLUM.value
             trade_prob = 0.88
         elif any(
-            kw in text_lower for kw in ["roof", "tile", "gutter", "downpipe", "flashing"]
+            kw in text_lower
+            for kw in [
+                "roof",
+                "slate",
+                "ridge tile",
+                "hip tile",
+                "dry-verge",
+                "dry verge",
+                "epdm",
+                "balcony deck",
+                "gutter",
+                "downpipe",
+                "flashing",
+                "chimney",
+                "valley gutter",
+                "fascia",
+                "soffit",
+                "hopper head",
+                "skylight",
+                "loft insulation",
+                "loft hatch",
+                "tarpaulin",
+                "interlocking concrete",
+            ]
         ):
             trade = TradeCode.ROOF.value
             trade_prob = 0.86
         elif any(
-            kw in text_lower for kw in ["plaster", "skim", "ceiling board"]
+            kw in text_lower
+            for kw in [
+                "plaster",
+                "skim",
+                "ceiling board",
+                "overboard",
+                "angle bead",
+                "artex",
+                "tile backer",
+                "splashback",
+                "wall tile",
+                "ceramic tile",
+                "bellcast",
+                "pebble-dash",
+                "roughcast",
+                "render",
+                "coving",
+                "screed",
+                "self-levelling",
+                "partition wall",
+                "fire-stop",
+            ]
         ):
             trade = TradeCode.PLAS.value
-            trade_prob = 0.83
+            trade_prob = 0.85
+        elif "leak" in text_lower or "drip" in text_lower:
+            trade = TradeCode.PLUM.value
+            trade_prob = 0.84
 
         return {
             "engine": "typesafe-jev-simulator-v1",
@@ -250,6 +408,71 @@ class SimulatedJevEngine:
             },
         }
 
+    @staticmethod
+    def _score_candidate_sors(
+        text_lower: str,
+        candidate_sors: Dict[str, str],
+    ) -> Optional[Dict[str, float]]:
+        """Scores candidate SOR descriptions against complaint text tokens to support dynamic 20-code catalog expansion."""
+        import re
+        from app.domain.sor_catalog import get_sor_item
+
+        stop_words = {
+            "the", "and", "for", "with", "from", "that", "this", "have", "has", "been",
+            "are", "was", "were", "into", "onto", "under", "over", "out", "our", "your",
+            "my", "in", "on", "at", "to", "of", "is", "it", "or", "up", "by", "as", "an",
+            "new", "old", "repair", "replace", "renew", "fix", "broken", "faulty", "damaged",
+            "leaking", "leak", "water", "room", "flat", "house", "property", "please", "need",
+        }
+        query_tokens = {
+            tok
+            for tok in re.findall(r"[a-z0-9]{3,}", text_lower)
+            if tok not in stop_words
+        }
+        if not query_tokens:
+            return None
+
+        scores: Dict[str, float] = {}
+        for code, short_desc in candidate_sors.items():
+            if code == "OTHER":
+                continue
+            item = get_sor_item(code)
+            corpus_text = f"{short_desc} {item.full_specification if item else ''}".lower()
+            corpus_tokens = set(re.findall(r"[a-z0-9]{3,}", corpus_text))
+            matched_tokens = query_tokens.intersection(corpus_tokens)
+            # Also reward exact substring matches of multi-character domain terms
+            substr_bonus = sum(
+                0.5 for tok in query_tokens if len(tok) >= 4 and tok in corpus_text
+            )
+            score = float(len(matched_tokens)) + substr_bonus
+            if score > 0:
+                scores[code] = score
+
+        if not scores:
+            return None
+
+        ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+        top_code, top_score = ranked[0]
+        if top_score < 2.5:
+            # Defect description does not sufficiently match any candidate in the current trade schedule
+            return None
+
+        top_prob = 0.86 if top_score >= 3.5 else 0.82
+
+        dist: Dict[str, float] = {top_code: top_prob}
+        non_other_codes = [c for c in candidate_sors if c != "OTHER" and c != top_code]
+        if len(ranked) >= 2:
+            second_code = ranked[1][0]
+            dist[second_code] = 0.09
+            remaining = [c for c in non_other_codes if c != second_code]
+            if remaining:
+                dist[remaining[0]] = 0.03
+        elif non_other_codes:
+            dist[non_other_codes[0]] = 0.10
+
+        dist["OTHER"] = round(max(0.01, 1.0 - sum(dist.values())), 2)
+        return dist
+
     def resolve_sor_code(
         self,
         complaint_text: str,
@@ -261,8 +484,9 @@ class SimulatedJevEngine:
         text_lower = complaint_text.lower()
         preset = (synthetic_image_preset or "").lower()
 
-        distribution: Dict[str, float] = {code: 0.02 for code in candidate_sors}
+        distribution: Optional[Dict[str, float]] = None
 
+        # 1. Exact Preset & Golden Baseline deterministic rules
         if trade == TradeCode.PLUM.value:
             if "not sure if it is coming from the copper supply pipe" in text_lower or (
                 "pooling" in text_lower and "push-fit" not in text_lower
@@ -299,7 +523,7 @@ class SimulatedJevEngine:
                     "194010": 0.01,
                     "OTHER": 0.01,
                 }
-            else:
+            elif "supply pipe" in text_lower or "copper" in text_lower:
                 distribution = {
                     "192001": 0.78,
                     "192005": 0.14,
@@ -309,45 +533,56 @@ class SimulatedJevEngine:
                 }
 
         elif trade == TradeCode.DAMP.value:
-            if "dpc" in text_lower or "rising damp" in text_lower or "chemical" in text_lower:
-                distribution = {"112005": 0.85, "114001": 0.08, "112015": 0.04, "OTHER": 0.03}
-            elif "repoint" in text_lower or "brickwork" in text_lower:
-                distribution = {"112015": 0.81, "114001": 0.12, "114010": 0.04, "OTHER": 0.03}
-            elif "fan" in text_lower or "humidistat" in text_lower:
-                distribution = {"114010": 0.83, "114001": 0.11, "112015": 0.03, "OTHER": 0.03}
-            else:
+            if preset == "black_mould" or "black mould" in text_lower or "fungicidal" in text_lower:
                 distribution = {"114001": 0.87, "114010": 0.08, "112005": 0.03, "OTHER": 0.02}
+            elif "dpc" in text_lower or "rising damp" in text_lower or "chemical" in text_lower:
+                distribution = {"112005": 0.85, "114001": 0.08, "112015": 0.04, "OTHER": 0.03}
+            elif "repoint" in text_lower or ("brickwork" in text_lower and "cavity" not in text_lower):
+                distribution = {"112015": 0.81, "114001": 0.12, "114010": 0.04, "OTHER": 0.03}
+            elif "humidistat" in text_lower or ("extract fan" in text_lower and "duct" not in text_lower):
+                distribution = {"114010": 0.83, "114001": 0.11, "112015": 0.03, "OTHER": 0.03}
 
         elif trade == TradeCode.ELEC.value:
             if "ceiling rose" in text_lower or "light fitting" in text_lower or preset == "ceiling_light_leak":
                 distribution = {"211001": 0.91, "212015": 0.04, "214002": 0.02, "OTHER": 0.03}
-            elif "smoke" in text_lower or "alarm" in text_lower:
+            elif "smoke" in text_lower or ("alarm" in text_lower and "carbon" not in text_lower):
                 distribution = {"214002": 0.88, "212015": 0.06, "211001": 0.03, "OTHER": 0.03}
-            else:
+            elif "socket" in text_lower and "cooker" not in text_lower:
                 distribution = {"212015": 0.82, "211001": 0.09, "214002": 0.05, "OTHER": 0.04}
 
         elif trade == TradeCode.JOIN.value:
-            if preset == "broken_hinge" or "kitchen" in text_lower or "hinge" in text_lower or "hanging off" in text_lower:
+            if preset == "broken_hinge" or "cupboard door" in text_lower or "hinge" in text_lower or "hanging off" in text_lower:
                 distribution = {"125011": 0.85, "121008": 0.09, "123020": 0.03, "OTHER": 0.03}
-            elif "fire door" in text_lower or "intumescent" in text_lower:
+            elif ("fire door" in text_lower and "closer" not in text_lower) or "intumescent" in text_lower:
                 distribution = {"121008": 0.84, "125011": 0.08, "123020": 0.05, "OTHER": 0.03}
-            else:
+            elif "handrail" in text_lower or "banister" in text_lower or "spindle" in text_lower:
                 distribution = {"123020": 0.80, "121008": 0.11, "125011": 0.05, "OTHER": 0.04}
 
         elif trade == TradeCode.ROOF.value:
-            if "gutter" in text_lower or "downpipe" in text_lower:
+            if ("gutter" in text_lower or "downpipe" in text_lower) and "valley" not in text_lower and "hopper" not in text_lower and "shoe" not in text_lower:
                 distribution = {"105012": 0.84, "101004": 0.12, "OTHER": 0.04}
-            else:
+            elif "interlocking" in text_lower or "concrete roof tile" in text_lower or "slipped tile" in text_lower:
                 distribution = {"101004": 0.83, "105012": 0.13, "OTHER": 0.04}
 
         elif trade == TradeCode.PLAS.value:
-            if "ceiling" in text_lower or "overboard" in text_lower:
+            if "overboard" in text_lower or "bowed" in text_lower or "water-damaged plasterboard ceiling" in text_lower:
                 distribution = {"162008": 0.82, "161002": 0.14, "OTHER": 0.04}
-            else:
+            elif "blown wall plaster" in text_lower or "hack off blown" in text_lower:
                 distribution = {"161002": 0.81, "162008": 0.15, "OTHER": 0.04}
 
-        else:
-            distribution = {"OTHER": 0.92}
+        # 2. Dynamic Candidate Scoring against active M3NHF_SOR_CATALOG[trade]
+        if distribution is None:
+            scored_dist = self._score_candidate_sors(text_lower, candidate_sors)
+            if scored_dist is not None:
+                distribution = scored_dist
+            else:
+                # No candidate SOR in the currently loaded schedule matched the complaint -> fallback to OTHER
+                non_other = [c for c in candidate_sors if c != "OTHER"]
+                distribution = {"OTHER": 0.78}
+                if non_other:
+                    share = round(0.22 / min(len(non_other), 3), 2)
+                    for c in non_other[:3]:
+                        distribution[c] = share
 
         # Filter to only keys present in candidate_sors if custom candidate dict was provided
         filtered_dist = {k: v for k, v in distribution.items() if k in candidate_sors}
@@ -368,3 +603,4 @@ class SimulatedJevEngine:
                 }
             },
         }
+

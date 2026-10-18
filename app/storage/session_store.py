@@ -16,7 +16,7 @@ from app.domain.schemas import (
     PropertyBaseline,
     TriageTicketRecord,
 )
-from app.domain.sor_catalog import get_sor_item
+from app.domain.sor_catalog import get_sor_item, reset_sor_catalog_to_base
 from app.engine.orchestrator import ComplaintTriageOrchestrator
 
 
@@ -337,6 +337,7 @@ class SessionStore:
                     "Resetting the shared Golden Baseline or performing a global wipe (all=true) "
                     "strictly requires a valid SANDBOX_ADMIN_KEY in the JSON POST body."
                 )
+            catalog_reset = reset_sor_catalog_to_base()
             self._session_properties.clear()
             self._session_tickets.clear()
             self._session_last_access.clear()
@@ -345,8 +346,10 @@ class SessionStore:
             return {
                 "status": "global_reset_complete",
                 "scope": "all_sessions_and_golden_baseline",
+                "sor_catalog_reset": catalog_reset,
             }
 
+        catalog_reset = reset_sor_catalog_to_base()
         norm_sid = (session_id or "default").strip() or "default"
         self._session_properties.pop(norm_sid, None)
         self._session_tickets.pop(norm_sid, None)
@@ -356,6 +359,7 @@ class SessionStore:
             "status": "session_reset_complete",
             "scope": f"s_{norm_sid}_*",
             "session_id": norm_sid,
+            "sor_catalog_reset": catalog_reset,
         }
 
 

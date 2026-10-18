@@ -42,6 +42,8 @@ The platform provides an intuitive, surveyor-grade UI designed for both technica
   - **9 Time-Machine Scenario Presets**: 1-click injection of real-world edge cases (clean plumbing, ambiguous margins, Awaab's Law black mould, emergency electrical leaks, vague WhatsApp photos, WIP chasers, contractor invoices, completed-repair workmanship recalls, and inappropriate photos).
   - **Custom Complaint Builder**: Test custom complaints through authenticated **Web Portal** or **WhatsApp Webhook** (with sender phone CRM lookup and synthetic defect photo attachments).
   - **Dynamic Policy Threshold Sliders**: Adjust Min Trade Confidence, Min SOR Confidence, Min Top-1 vs Top-2 Margin, and Content Safety thresholds in real time to observe circuit-breaker gating behavior.
+  - **Refresh SOR Codes from Phase 4 Feed**: Select any repair trade (`PLUM`, `DAMP`, `ROOF`, `JOIN`, `ELEC`, `PLAS`, or `ALL`) and import up to **20 authentic M3NHF v8 codes** per trade (up to **120 codes** total) into the active catalog so custom complaints across trades resolve to specific SOR codes without falling back to `OTHER`.
+  - **Reset to Baseline & Sys Admin Reset**: Both **"🔄 Reset My Workspace to Baseline"** and **"⚙️ System Admin Reset"** restore the workspace tickets/properties **and** reset the active M3NHF Schedule of Rates back to the **18-code Base Set**.
 - **Top KPI Header**: Live telemetry showing total tickets, auto-approval percentage, surveyor review rate, median probability margin, and active session ID.
 - **4-Stage Visual Workflow Inspector**:
   - **Stage 1 (Intake & Photo Prep)**: Displays intake channel (`WHATSAPP`, `DASHBOARD_UI`, `MCP`), job/invoice reference, normalized image preview, photo purge alerts, and automated WhatsApp replies sent to the resident.
@@ -59,6 +61,7 @@ The platform provides an intuitive, surveyor-grade UI designed for both technica
 - **Property Context & M3NHF Catalog Tab (Left Pane)**:
   - **Active Property Context**: Displays open WIP jobs and recently completed repairs to prevent duplicate orders and catch workmanship recalls.
   - **M3NHF Schedule of Rates Catalog**:
+    - Inline **Phase 4 Trade Feed Importer** to expand any trade up to 20 M3NHF SOR codes or reset back to the 18-code Base Set.
     - Highlights the active inspected ticket's SOR code in an alert banner.
     - Marks the selected code with `Status: 👉 SELECTED` and **automatically floats it to row #1**.
     - **Dynamic Expansion**: Any custom code selected by Live Jev or entered via surveyor override is dynamically added to the table.
@@ -227,4 +230,19 @@ Modal will print:
 - **Interactive OpenAPI Docs**: `http://127.0.0.1:8000/docs`
 - **FastMCP SSE Endpoint**: `http://127.0.0.1:8000/mcp/sse`
 - **Twilio WhatsApp Webhook**: `http://127.0.0.1:8000/api/v1/webhooks/whatsapp/twilio`
+
+### 4. Phase 4 Open-Data Pipeline & Feeds CLI
+Generate stratified benchmark datasets (Ombudsman proportions) or refresh trade SOR schedules:
+```bash
+# Generate 500 stratified complaints (JSONL)
+.venv/bin/python -m app.data_pipeline.cli --samples 500 --output data/synthetic_complaints_500.jsonl
+
+# Refresh active catalog for a trade (up to 20 codes)
+.venv/bin/python -m app.data_pipeline.cli --refresh-trade PLUM --max-codes 20
+
+# Reset active catalog back to the 18-code Base Set
+.venv/bin/python -m app.data_pipeline.cli --reset-catalog
+```
+For full architectural details, feed inventories, and walkthroughs, see the [Phase 4 Feeds Guide](docs/phase_4_feeds_guide.md).
+
 
