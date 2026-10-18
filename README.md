@@ -1,23 +1,102 @@
 # Social Housing & Property Complaint Classifier Sandbox
 
-A **Tri-Pillar Sandbox & Prototype Platform** (Typed FastAPI REST API + Mounted FastMCP Agent Server + Modular Streamlit Control Deck) that assesses multi-channel resident and commercial property complaints (text + multimodal photos via **Web Dashboard** and **WhatsApp Business Webhooks**) using **TypeSafe Jev** and **M3NHF Schedule of Rates (SOR) codes**, wrapped in **Hard Statutory & Confidence Gating Middleware (`TriageEscalationGuard`)**.
+A **Sandbox & Prototype Platform** (Typed FastAPI REST API + Mounted FastMCP Agent Server + Modular Streamlit Control Deck) that assesses multi-channel resident and commercial property complaints (text + multimodal photos via **Web Dashboard** and **WhatsApp Business Webhooks**) using **TypeSafe Jev** and **M3NHF Schedule of Rates (SOR) codes**, wrapped in **Hard Statutory & Confidence Gating Middleware (`TriageEscalationGuard`)**.
 
 ---
 
-## Key Capabilities
+## Key Capabilities & User Interface Architecture
 
-1. **Prototype Landing Page with Two Option Cards & Below-the-Fold Help**:
-   - **Option Card 1 — Interactive Sandbox & Control Deck**: Live multi-channel complaint intake (Web Portal & WhatsApp simulator), 9 Time-Machine scenario presets, real-time gating threshold sliders, Surveyor review & recall queue, and an embedded browser MCP client.
-   - **Option Card 2 — Product Thinking, Insights & Decisions**: Domain research breakdown (UK Housing Ombudsman & Commercial Property distributions), rationale for two-stage Jev + margin gating vs. raw LLM chat, and completed-repair recall vs. WIP re-routing logic.
-   - **Below-the-Cards Help & Preset Guide**: Step-by-step usage instructions and a complete reference table explaining what each of the 9 Time-Machine presets is designed to test.
-2. **Stage 1 Content Safety Gate (Flag & Purge Media)**:
-   - Detects inappropriate/rude photo attachments or abusive submissions in Stage 1 (`inappropriate_content_flag`), halts Stage 2, purges raw base64 media bytes from memory/storage (`media_discarded=True`), and logs `DISCARDED_INAPPROPRIATE_CONTENT`.
-3. **Stage 1 Message Intent Classification & Re-Routing**:
-   - **WIP Repair Updates & Contractor Scheduling (`WIP_REPAIR_UPDATE`, `CONTRACTOR_SCHEDULING`)** $\rightarrow$ Short-circuits Stage 2 SOR matching and routes to `CUSTOMER_SERVICE_WIP_DESK`.
-   - **Contractor Late Payment Inquiries (`CONTRACTOR_PAYMENT_INQUIRY`)** $\rightarrow$ Short-circuits Stage 2 and routes to `CONTRACTOR_FINANCE_DESK`.
-   - **Completed Repair Job Complaints (`COMPLETED_REPAIR_COMPLAINT`)** $\rightarrow$ Evaluates **both** Pass 1 and Pass 2 (`resolve_sor_code`) to scope the remedial M3NHF SOR code, then routes to `QUALITY_RECALL_SURVEYOR_REVIEW` (`is_completed_job_recall=True`).
-4. **Hard Circuit-Breaker Middleware (`TriageEscalationGuard`)**:
-   - Enforces **Awaab's Law** damp hazard ($\ge 0.40 \rightarrow$ `DISREPAIR_LEGAL_TEAM`), **24-hour Priority 3 Emergencies** ($\rightarrow$ `OUT_OF_HOURS_DUTY_OFFICER`), **Trade Confidence** ($\ge 0.70$), **SOR Confidence** ($\ge 0.65$), and **Top-1 vs. Top-2 Probability Margin** ($\ge 0.15$).
+The platform provides an intuitive, surveyor-grade UI designed for both technical evaluators and housing maintenance operations:
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────────┐
+│                                STREAMLIT CONTROL DECK                                    │
+│                                                                                          │
+│ ┌──────────────────────┐  ┌────────────────────────────────────────────────────────────┐ │
+│ │ SIDEBAR CONTROL DECK │  │ 1. REAL-TIME KPI HEADER                                    │ │
+│ │                      │  │ Total Tickets | Auto-Approved % | Median Margin | Mode     │ │
+│ │ • Session Switcher   │  ├────────────────────────────────────────────────────────────┤ │
+│ │ • Engine Mode Toggle │  │ 2. 4-STAGE PIPELINE WALKTHROUGH (WHAT HAPPENED & WHY)      │ │
+│ │   (SIMULATED vs LIVE)│  │ [Stage 1: Intake] [Stage 2: Pass 1] [Stage 3] [Stage 4]   │ │
+│ │ • 9 Scenario Presets │  ├────────────────────────────────────────────────────────────┤ │
+│ │ • Custom Complaint   │  │ 3. SURVEYOR & RECALL QUEUE (Confirm or Override SOR)       │ │
+│ │   (Web & WhatsApp)   │  ├─────────────────────────────┬──────────────────────────────┤ │
+│ │ • Policy Sliders     │  │ 4. PROPERTY & M3NHF CATALOG │ 5. JEV GATEKEEPER AUDIT      │ │
+│ │ • Reset Workspace    │  │ Active Job Context & SOR    │ Stream of Session Tickets    │ │
+│ └──────────────────────┘  └─────────────────────────────┴──────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 1. Prototype Landing Page (`/`)
+- **Direct Navigation Cards**: Quick links to the **Live Sandbox Dashboard**, **Product Thinking & Mermaid Diagrams**, and **MCP Agent Console**.
+- **Streamlined Layout**: Removed duplicate stats from the landing page—focusing attention on the problem statement and workflow entry points.
+- **Below-the-Fold Reference Guide**:
+  - Full walkthrough table explaining what each of the **9 Time-Machine Presets** demonstrates.
+  - Copy-paste prompts showing how an AI agent uses MCP tools/resources for each scenario.
+  - Step-by-step guide for testing from a real smartphone via the **Twilio WhatsApp Sandbox**.
+
+### 2. Live Interactive Sandbox Dashboard (`/sandbox`)
+- **Sidebar Control Deck**:
+  - **Multi-User Session Isolation**: Isolate experiments per browser session or URL query parameter (`?session=abc123`).
+  - **Live Jev Toggle with Instant Feedback**: Switch between `SIMULATED` and `LIVE` TypeSafe AI Jev in one click with instant status badges and toast feedback.
+  - **9 Time-Machine Scenario Presets**: 1-click injection of real-world edge cases (clean plumbing, ambiguous margins, Awaab's Law black mould, emergency electrical leaks, vague WhatsApp photos, WIP chasers, contractor invoices, completed-repair workmanship recalls, and inappropriate photos).
+  - **Custom Complaint Builder**: Test custom complaints through authenticated **Web Portal** or **WhatsApp Webhook** (with sender phone CRM lookup and synthetic defect photo attachments).
+  - **Dynamic Policy Threshold Sliders**: Adjust Min Trade Confidence, Min SOR Confidence, Min Top-1 vs Top-2 Margin, and Content Safety thresholds in real time to observe circuit-breaker gating behavior.
+- **Top KPI Header**: Live telemetry showing total tickets, auto-approval percentage, surveyor review rate, median probability margin, and active session ID.
+- **4-Stage Visual Workflow Inspector**:
+  - **Stage 1 (Intake & Photo Prep)**: Displays intake channel (`WHATSAPP`, `DASHBOARD_UI`, `MCP`), job/invoice reference, normalized image preview, photo purge alerts, and automated WhatsApp replies sent to the resident.
+  - **Stage 2 (TypeSafe Jev Pass 1 Screening)**: Evaluates Content Safety (`noul`), Message Intent (`choice`), Primary Trade Chapter (`choice`), Awaab's Law Damp Risk (`noul`), and Repair Priority SLA Level (`score`). Non-repair intents (WIP, scheduling, finance) are immediately short-circuited here.
+  - **Stage 3 (Bounded M3NHF SOR Selection & Margin)**:
+    - Displays selected 6-digit M3NHF SOR code and confidence score.
+    - **Native Hover Tooltip (`help=...`)**: Instant surveyor hover card with the full technical specification, base schedule rate, unit of measure, and trade chapter.
+    - **Specification Expander (`📖 M3NHF Item Specification`)**: Detailed specification, schedule rate, and default SLA priority.
+    - **Probability Distribution Bar Chart**: Visual breakdown across candidate codes.
+    - **Top-1 vs. Top-2 Competitor Expander**: Compares competing codes side-by-side; automatically expands if the margin is below the `0.15` threshold.
+  - **Stage 4 (Circuit-Breaker Gate & Routing Decision)**: Clear badge showing whether the works order was auto-approved or intercepted by `TriageEscalationGuard`, listing all triggered circuit breakers.
+- **Surveyor & Recall Review Queue**:
+  - Pauses tickets with low confidence, ambiguous margins, or workmanship recalls.
+  - Allows repairs surveyors to review photo evidence, select/override the M3NHF SOR code, and approve direct HMS contractor dispatch.
+- **Property Context & M3NHF Catalog Tab (Left Pane)**:
+  - **Active Property Context**: Displays open WIP jobs and recently completed repairs to prevent duplicate orders and catch workmanship recalls.
+  - **M3NHF Schedule of Rates Catalog**:
+    - Highlights the active inspected ticket's SOR code in an alert banner.
+    - Marks the selected code with `Status: 👉 SELECTED` and **automatically floats it to row #1**.
+    - **Dynamic Expansion**: Any custom code selected by Live Jev or entered via surveyor override is dynamically added to the table.
+- **Jev Gatekeeper Audit Stream (Right Pane)**:
+  - Chronological audit cards for all session tickets with Intent, Trade/SOR, and Damp/SLA metrics.
+  - Single-click **"Load into 4-Stage Walkthrough"** button to inspect any past ticket in the visual pipeline.
+
+### 3. Product Thinking, Insights & Mermaid Diagrams (`/insights`)
+- **Tab 1: Problem Framing**: Why responsive repairs triage requires hard statutory circuit breakers (Awaab's Law, £65–£165 wasted callout costs, duplicate order prevention).
+- **Tab 2: Visual Mermaid Diagrams**:
+  1. *4-Stage Guardrailed Triage Architecture* (Flowchart).
+  2. *End-to-End Multimodal Triage & MCP Sequence Diagram* (Sequence).
+  3. *Dynamic Bounded SOR Resolution & Jev Context Window Scaling* (Flowchart illustrating how Pass 1 bounds Pass 2 criteria to eliminate context bloat and prevent hallucinations).
+- **Tab 3: Ombudsman & Commercial Data Insights**: Real-world distribution data from the UK Housing Ombudsman Service and Property Chamber tribunals.
+- **Tab 4: Two-Stage Jev vs. Raw LLM Chat**: Architectural comparison detailing why bounded schema evaluation outperforms unconstrained prompt engineering.
+
+### 4. Embedded FastMCP Agent Console & Developer Guides (`/mcp`)
+- **Embedded MCP Tool Runner**: Interactive form to run and inspect all 4 FastMCP primitives directly in the browser:
+  - Read Tool: `get_latest_triage`
+  - Intake Tool: `submit_complaint_triage`
+  - Simulation Tool: `simulate_complaint_event`
+  - Actuator Tool: `approve_or_override_work_order`
+- **MCP Agent Prompts**: Curated prompts for Claude Desktop, Cursor, and Gemini to demonstrate how autonomous agents query resources and invoke triage tools.
+
+---
+
+## M3NHF Schedule of Rates Trade Chapter Standard
+
+All SOR codes in the platform match real-world UK social housing M3NHF Schedule of Rates section chapters:
+
+| Section | Trade Chapter | Example Codes & Standard Scope |
+| :--- | :--- | :--- |
+| **Section 19** | **Plumbing (PLUM)** | `192005` (Kitchen sink waste trap), `192001` (Internal supply pipe repair <=22mm), `194010` (WC cistern ball valve overhaul), `195020` (Emergency burst pipe isolate) |
+| **Section 11** | **Damp Proofing (DAMP)** | `114001` (Awaab's Law fungicidal wash), `114010` (Humidistat extract fan), `112005` (Chemical DPC injection), `112015` (External brickwork repointing) |
+| **Section 10** | **Roofing (ROOF)** | `101004` (Interlocking concrete tiles), `105012` (Rainwater gutter & downpipe clearance) |
+| **Section 12** | **Joinery (JOIN)** | `125011` (Kitchen cupboard door & hinges), `121008` (Internal fire door ease), `123020` (Staircase handrail) |
+| **Section 16** | **Plastering (PLAS)** | `161002` (Blown wall plaster skim), `162008` (Water-damaged ceiling overboard & skim) |
+| **Section 21** | **Electrical (ELEC)** | `211001` (Emergency make safe water in ceiling rose), `212015` (13A twin socket), `214002` (Optical smoke alarm) |
 
 ---
 
