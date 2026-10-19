@@ -187,13 +187,18 @@ class SandboxAPIClient:
         ]
 
     def submit_complaint(self, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        res = self._request("POST", "/complaints/triage", json_body=payload)
+        # Enforce mutual exclusion: uploaded photo removes synthetic defect preset
+        clean_payload = dict(payload)
+        if clean_payload.get("image_base64"):
+            clean_payload["synthetic_image_preset"] = None
+
+        res = self._request("POST", "/complaints/triage", json_body=clean_payload)
         if isinstance(res, dict):
             if res.get("_api_error"):
                 return None
             return res
         try:
-            req = ComplaintIntakeRequest(**payload)
+            req = ComplaintIntakeRequest(**clean_payload)
             tkt = session_store.orchestrator.process_intake(req, thresholds=req.thresholds)
             saved = session_store.add_ticket(tkt, session_id=req.session_id)
             return saved.model_dump()
@@ -202,24 +207,29 @@ class SandboxAPIClient:
             return None
 
     def submit_whatsapp_webhook(self, payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        res = self._request("POST", "/webhooks/whatsapp", json_body=payload)
+        # Enforce mutual exclusion: uploaded media removes synthetic defect preset
+        clean_payload = dict(payload)
+        if clean_payload.get("media_base64"):
+            clean_payload["synthetic_image_preset"] = None
+
+        res = self._request("POST", "/webhooks/whatsapp", json_body=clean_payload)
         if isinstance(res, dict):
             if res.get("_api_error"):
                 return None
             return res
         try:
             req = ComplaintIntakeRequest(
-                complaint_text=payload["message_body"],
-                property_id=payload.get("property_id", "prop_oak_01"),
+                complaint_text=clean_payload["message_body"],
+                property_id=clean_payload.get("property_id", "prop_oak_01"),
                 channel=IntakeChannel.WHATSAPP,
-                engine_mode=EngineMode(payload.get("engine_mode", "SIMULATED")),
-                session_id=payload.get("session_id", "default"),
-                image_base64=payload.get("media_base64"),
-                synthetic_image_preset=payload.get("synthetic_image_preset"),
-                existing_job_ref=payload.get("existing_job_ref"),
+                engine_mode=EngineMode(clean_payload.get("engine_mode", "SIMULATED")),
+                session_id=clean_payload.get("session_id", "default"),
+                image_base64=clean_payload.get("media_base64"),
+                synthetic_image_preset=clean_payload.get("synthetic_image_preset"),
+                existing_job_ref=clean_payload.get("existing_job_ref"),
                 thresholds=(
-                    GatingThresholds(**payload["thresholds"])
-                    if payload.get("thresholds")
+                    GatingThresholds(**clean_payload["thresholds"])
+                    if clean_payload.get("thresholds")
                     else None
                 ),
             )

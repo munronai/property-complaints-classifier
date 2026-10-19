@@ -63,10 +63,15 @@ class ComplaintTriageOrchestrator:
 
         # 1. Resolve & normalize image if provided (either base64 upload or synthetic preset)
         raw_image_source: Optional[Any] = None
-        if request.image_base64:
-            raw_image_source = request.image_base64
-        elif request.synthetic_image_preset:
-            raw_image_source = generate_synthetic_defect_image(request.synthetic_image_preset)
+        if request.image_base64 and str(request.image_base64).strip():
+            raw_image_source = str(request.image_base64).strip()
+            # Explicitly remove synthetic image preset when user uploads a custom photo
+            request.synthetic_image_preset = None
+        elif request.synthetic_image_preset and str(request.synthetic_image_preset).strip() not in ("NONE", "None", ""):
+            raw_image_source = generate_synthetic_defect_image(str(request.synthetic_image_preset).strip())
+        else:
+            raw_image_source = None
+            request.synthetic_image_preset = None
 
         normalized_b64: Optional[str] = None
         image_telemetry: Optional[ImageTelemetry] = None
@@ -74,11 +79,14 @@ class ComplaintTriageOrchestrator:
             normalized_b64, _, image_telemetry = prepare_image_for_jev(raw_image_source)
 
         # 2. Execute Pass 1 (Content Safety, Message Intent, Trade, Awaab's Law, SLA Priority)
+        import os
+        raw_key = self.api_key or os.environ.get("TYPESAFE_API_KEY", "")
+        effective_key = str(raw_key).strip().strip('"').strip("'") if raw_key else ""
         use_live = (
-            request.engine_mode == EngineMode.LIVE and bool(self.api_key)
+            request.engine_mode == EngineMode.LIVE and bool(effective_key)
         )
         if use_live:
-            live_client = JevRepairsTriageEngine(api_key=self.api_key)
+            live_client = JevRepairsTriageEngine(api_key=effective_key)
             stage1_output = live_client.triage_complaint(
                 complaint_text=request.complaint_text,
                 image_source=raw_image_source,
@@ -129,7 +137,7 @@ class ComplaintTriageOrchestrator:
             # Execute Pass 2 for both NEW_REPAIR_DEFECT and COMPLETED_REPAIR_COMPLAINT
             candidate_sors = get_candidate_sors_for_trade(trade_val)
             if use_live:
-                live_client = JevRepairsTriageEngine(api_key=self.api_key)
+                live_client = JevRepairsTriageEngine(api_key=effective_key)
                 stage2_output = live_client.resolve_sor_code(
                     complaint_text=request.complaint_text,
                     trade=trade_val,

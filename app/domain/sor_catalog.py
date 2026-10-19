@@ -74,6 +74,13 @@ REPAIR_PRIORITY_LEVELS: Dict[str, str] = {
     "3": "Emergency (24-hour): Burst pipe, water pouring into electrics, sewage backflow, total heating loss in winter",
 }
 
+# Ordered level descriptions required by TypeSafe AI Jev Score `criteria` (levels 0 to 2)
+REPAIR_PRIORITY_SCORE_CRITERIA: List[str] = [
+    "Routine (28-day): Minor wear and tear, hairline plaster cracks, eased door, non-critical drip",
+    "Urgent (7-day): Persistent slow leak contained in bucket, partial heating fault, broken kitchen unit",
+    "Emergency (24-hour): Burst pipe, water pouring into electrics, sewage backflow, total heating loss in winter",
+]
+
 
 # Immutable Golden Base Set of M3NHF Schedule of Rates Catalog structured by standard trade chapters
 BASE_M3NHF_SOR_CATALOG: Dict[TradeCode, List[SORItem]] = {

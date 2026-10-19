@@ -21,7 +21,11 @@ def prepare_image_for_jev(
         asset_ref = f"asset-{uuid.uuid4().hex[:8]}"
 
     if isinstance(image_source, str):
-        if os.path.exists(image_source):
+        if image_source in SYNTHETIC_IMAGE_CATALOG:
+            # Preset key passed directly (e.g. 'black_mould', 'sink_leak')
+            img_bytes = generate_synthetic_defect_image(image_source)
+            img = Image.open(io.BytesIO(img_bytes))
+        elif os.path.exists(image_source):
             img = Image.open(image_source)
         else:
             # Treat as base64 string (strip data URI prefix if present)
@@ -42,9 +46,15 @@ def prepare_image_for_jev(
     # 1. Transpose based on EXIF so mobile/WhatsApp photos never arrive sideways
     img = ImageOps.exif_transpose(img)
 
-    # 2. Ensure RGB format
+    # 2. Ensure RGB format (paste RGBA / transparent PNGs onto white background)
     if img.mode != "RGB":
-        img = img.convert("RGB")
+        if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
+            rgba = img.convert("RGBA")
+            bg = Image.new("RGB", rgba.size, (255, 255, 255))
+            bg.paste(rgba, mask=rgba.split()[3])
+            img = bg
+        else:
+            img = img.convert("RGB")
 
     # 3. Resize so longest side <= 1568px
     w, h = img.size
@@ -72,7 +82,8 @@ def prepare_image_for_jev(
         mime_type="image/jpeg",
         size_bytes=len(jpeg_bytes),
     )
-    return encoded_b64, "image/jpeg", telemetry
+    # Return short format 'jpeg' matching TypeSafe AI /v1/systemone asset schema
+    return encoded_b64, "jpeg", telemetry
 
 
 SYNTHETIC_IMAGE_CATALOG: Dict[str, str] = {

@@ -80,6 +80,11 @@ async def handle_whatsapp_webhook(
     store: SessionStore = Depends(get_session_store),
 ) -> TriageTicketRecord:
     """Normalizes an incoming WhatsApp JSON payload (simulator or webhook) and evaluates it via TypeSafe Jev."""
+    effective_synth = (
+        None
+        if (payload.media_base64 and str(payload.media_base64).strip())
+        else payload.synthetic_image_preset
+    )
     intake_request = ComplaintIntakeRequest(
         complaint_text=payload.message_body,
         property_id=payload.property_id,
@@ -87,7 +92,7 @@ async def handle_whatsapp_webhook(
         engine_mode=payload.engine_mode,
         session_id=payload.session_id or "default",
         image_base64=payload.media_base64,
-        synthetic_image_preset=payload.synthetic_image_preset,
+        synthetic_image_preset=effective_synth,
         existing_job_ref=payload.existing_job_ref,
         thresholds=payload.thresholds,
     )

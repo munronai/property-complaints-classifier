@@ -240,25 +240,57 @@ def render_sandbox_dashboard_page() -> None:
                     height=100,
                 )
 
-            synth_options = ["NONE"] + list(SYNTHETIC_IMAGE_CATALOG.keys())
-            custom_img_preset = st.selectbox(
-                "Attach Synthetic Defect Photo",
-                options=synth_options,
-                index=synth_options.index(default_img_preset) if default_img_preset in synth_options else 0,
-                format_func=lambda k: "📝 No Photo (Text Only)" if k == "NONE" else SYNTHETIC_IMAGE_CATALOG[k],
+            photo_mode_options = ["NONE", "SYNTHETIC", "UPLOAD"]
+            default_photo_mode_idx = 1 if default_img_preset != "NONE" else 0
+            photo_mode = st.radio(
+                "Photo Attachment Option",
+                options=photo_mode_options,
+                index=default_photo_mode_idx,
+                format_func=lambda m: {
+                    "NONE": "📝 No Photo (Text Only)",
+                    "SYNTHETIC": "🧪 Synthetic Defect Preset",
+                    "UPLOAD": "📷 Upload Custom Photo (JPEG / PNG)",
+                }[m],
+                horizontal=True,
+                key=f"sb_photo_mode_{recipe_choice}",
             )
-            if custom_img_preset != "NONE":
+
+            chosen_synth: Optional[str] = None
+            uploaded_file = None
+
+            if photo_mode == "NONE":
+                st.caption("ℹ️ Text-only mode: No image assets will be submitted to Jev.")
+            elif photo_mode == "SYNTHETIC":
+                synth_options = list(SYNTHETIC_IMAGE_CATALOG.keys())
+                synth_idx = synth_options.index(default_img_preset) if default_img_preset in synth_options else 0
+                custom_img_preset = st.selectbox(
+                    "Select Synthetic Defect Preset",
+                    options=synth_options,
+                    index=synth_idx,
+                    format_func=lambda k: SYNTHETIC_IMAGE_CATALOG[k],
+                    key=f"sb_synth_select_{recipe_choice}",
+                )
+                chosen_synth = custom_img_preset
                 st.image(
                     generate_synthetic_defect_image(custom_img_preset),
-                    caption=SYNTHETIC_IMAGE_CATALOG[custom_img_preset],
+                    caption=f"Synthetic Sample: {SYNTHETIC_IMAGE_CATALOG[custom_img_preset]} (Auto-converted to JPEG for Jev)",
                     use_container_width=True,
                 )
-
-            uploaded_file = st.file_uploader(
-                "Or Upload Custom JPEG/PNG Photo",
-                type=["jpg", "jpeg", "png"],
-                key="sb_custom_upload",
-            )
+            else:  # photo_mode == "UPLOAD"
+                chosen_synth = None
+                st.caption("📷 **Custom Photo Upload:** Replaces all synthetic presets with your uploaded image.")
+                uploaded_file = st.file_uploader(
+                    "Upload Custom JPEG or PNG Photo",
+                    type=["jpg", "jpeg", "png"],
+                    key="sb_custom_upload",
+                    help="Upload a screenshot or photo. Converted to standardized JPEG for TypeSafe Jev API.",
+                )
+                if uploaded_file is not None:
+                    st.image(
+                        uploaded_file,
+                        caption=f"Attached Photo: {uploaded_file.name}",
+                        use_container_width=True,
+                    )
 
             btn_cta = (
                 "📲 Send Simulated WhatsApp Webhook"
@@ -267,10 +299,20 @@ def render_sandbox_dashboard_page() -> None:
             )
             if st.button(btn_cta, type="primary", use_container_width=True):
                 uploaded_b64: Optional[str] = None
-                if uploaded_file is not None:
-                    uploaded_b64 = base64.b64encode(uploaded_file.read()).decode("utf-8")
+                if photo_mode == "UPLOAD" and uploaded_file is not None:
+                    raw_bytes = uploaded_file.getvalue()
+                    if raw_bytes:
+                        uploaded_b64 = base64.b64encode(raw_bytes).decode("utf-8")
+                    chosen_synth = None
+                elif photo_mode == "SYNTHETIC":
+                    uploaded_b64 = None
+                else:
+                    uploaded_b64 = None
+                    chosen_synth = None
 
-                chosen_synth = None if (custom_img_preset == "NONE" or uploaded_b64) else custom_img_preset
+                # Double safety guard: any uploaded custom photo strictly removes synthetic preset
+                if uploaded_b64:
+                    chosen_synth = None
 
                 with st.spinner(f"Evaluating via {current_engine_mode} Jev Engine..."):
                     if custom_channel == "WHATSAPP":
