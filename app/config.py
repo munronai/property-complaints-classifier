@@ -15,18 +15,16 @@ class AppSettings:
     environment: str = os.environ.get("SANDBOX_ENV", "development")
     typesafe_api_key: str = os.environ.get("TYPESAFE_API_KEY", "")
     typesafe_api_url: str = os.environ.get(
-        "TYPESAFE_API_URL", "https://api.typesafe.ai/v1/decide"
+        "TYPESAFE_API_URL", "https://api.typesafe.ai/v1/systemone"
     )
-    sandbox_admin_key: str = os.environ.get("SANDBOX_ADMIN_KEY", "sor-admin-secret-2026")
+    sandbox_admin_key: str = os.environ.get(
+        "SANDBOX_ADMIN_KEY", "sor-admin-secret-2026"
+    )
     default_engine_mode: str = os.environ.get("DEFAULT_ENGINE_MODE", "SIMULATED")
 
     # Default TriageEscalationGuard Policy Thresholds
-    min_trade_confidence: float = float(
-        os.environ.get("MIN_TRADE_CONFIDENCE", "0.70")
-    )
-    min_sor_confidence: float = float(
-        os.environ.get("MIN_SOR_CONFIDENCE", "0.65")
-    )
+    min_trade_confidence: float = float(os.environ.get("MIN_TRADE_CONFIDENCE", "0.70"))
+    min_sor_confidence: float = float(os.environ.get("MIN_SOR_CONFIDENCE", "0.65"))
     min_probability_margin: float = float(
         os.environ.get("MIN_PROBABILITY_MARGIN", "0.15")
     )

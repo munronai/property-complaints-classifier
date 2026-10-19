@@ -42,7 +42,7 @@ def render_sidebar(session_id: str) -> Dict[str, float]:
             index=0,
             help=(
                 "SIMULATED: Deterministic sub-millisecond calibrated mathematical model. "
-                "LIVE: Real-time HTTP calls to https://api.typesafe.ai/v1/decide."
+                "LIVE: Real-time HTTP calls to https://api.typesafe.ai/v1/systemone."
             ),
             key="engine_mode_select",
         )
@@ -50,13 +50,19 @@ def render_sidebar(session_id: str) -> Dict[str, float]:
 
         st.divider()
         st.markdown("### ⚙️ Circuit-Breaker Thresholds")
-        st.caption("Adjust thresholds to test how `TriageEscalationGuard` alters routing outcomes:")
+        st.caption(
+            "Adjust thresholds to test how `TriageEscalationGuard` alters routing outcomes:"
+        )
 
         min_trade_conf = st.slider(
             "Min Trade Confidence",
             min_value=0.40,
             max_value=0.95,
-            value=float(st.session_state.get("min_trade_confidence", settings.min_trade_confidence)),
+            value=float(
+                st.session_state.get(
+                    "min_trade_confidence", settings.min_trade_confidence
+                )
+            ),
             step=0.05,
             help="Stage 1 primary trade probability below this threshold routes to SURVEYOR_DESK_REVIEW.",
         )
@@ -64,7 +70,9 @@ def render_sidebar(session_id: str) -> Dict[str, float]:
             "Min M3NHF SOR Confidence",
             min_value=0.40,
             max_value=0.95,
-            value=float(st.session_state.get("min_sor_confidence", settings.min_sor_confidence)),
+            value=float(
+                st.session_state.get("min_sor_confidence", settings.min_sor_confidence)
+            ),
             step=0.05,
             help="Stage 2 selected SOR probability below this threshold routes to SURVEYOR_DESK_REVIEW.",
         )
@@ -72,7 +80,11 @@ def render_sidebar(session_id: str) -> Dict[str, float]:
             "Min Top-1 vs Top-2 SOR Margin",
             min_value=0.05,
             max_value=0.50,
-            value=float(st.session_state.get("min_probability_margin", settings.min_probability_margin)),
+            value=float(
+                st.session_state.get(
+                    "min_probability_margin", settings.min_probability_margin
+                )
+            ),
             step=0.05,
             help="Minimum required gap between #1 and #2 candidate SOR codes (catches ambiguous defects).",
         )
@@ -80,7 +92,11 @@ def render_sidebar(session_id: str) -> Dict[str, float]:
             "Awaab's Law Damp Hazard Cutoff",
             min_value=0.15,
             max_value=0.85,
-            value=float(st.session_state.get("damp_hazard_threshold", settings.damp_hazard_threshold)),
+            value=float(
+                st.session_state.get(
+                    "damp_hazard_threshold", settings.damp_hazard_threshold
+                )
+            ),
             step=0.05,
             help="Damp/mould probability at or above this threshold forces routing to DISREPAIR_LEGAL_TEAM.",
         )
@@ -109,7 +125,9 @@ def render_sidebar(session_id: str) -> Dict[str, float]:
 
         st.divider()
         st.markdown("### 🔄 Workspace Reset & Admin Gate")
-        if st.button("Reset My Workspace (s_" + session_id + "_*)", use_container_width=True):
+        if st.button(
+            "Reset My Workspace (s_" + session_id + "_*)", use_container_width=True
+        ):
             res = api_client.reset_workspace(session_id=session_id, reset_all=False)
             if res:
                 st.success(f"Workspace `s_{session_id}_*` reseeded to Golden Baseline.")
@@ -122,14 +140,18 @@ def render_sidebar(session_id: str) -> Dict[str, float]:
                 help="Default sandbox key: sor-admin-secret-2026",
                 key="admin_key_password_input",
             )
-            if st.button("Wipe All Sessions & Reseed Baseline", use_container_width=True):
+            if st.button(
+                "Wipe All Sessions & Reseed Baseline", use_container_width=True
+            ):
                 res = api_client.reset_workspace(
                     session_id=session_id,
                     reset_all=True,
                     admin_key=admin_key_input,
                 )
                 if res:
-                    st.success("Global wipe complete! All sessions and Golden Baseline reseeded.")
+                    st.success(
+                        "Global wipe complete! All sessions and Golden Baseline reseeded."
+                    )
                     st.rerun()
 
     return thresholds_dict

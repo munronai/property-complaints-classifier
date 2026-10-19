@@ -112,7 +112,7 @@ The platform supports running in **SIMULATED mode** out of the box with zero ext
 | Variable | Description | Required? | Default / Example |
 | :--- | :--- | :--- | :--- |
 | `TYPESAFE_API_KEY` | TypeSafe AI API Key for live Jev classification | No (falls back to `SIMULATED`) | `ts_live_...` |
-| `TYPESAFE_API_URL` | TypeSafe decision endpoint | No | `https://api.typesafe.ai/v1/decide` |
+| `TYPESAFE_API_URL` | TypeSafe decision endpoint | No | `https://api.typesafe.ai/v1/systemone` |
 | `DEFAULT_ENGINE_MODE` | Default engine mode | No | `SIMULATED` (or `LIVE`) |
 | `SANDBOX_ADMIN_KEY` | Master key to authorize global workspace wipe (`POST /api/v1/reset`) | Recommended for production | `sor-admin-secret-2026` |
 | `TWILIO_ACCOUNT_SID` | Twilio Account SID (for downloading incoming WhatsApp MMS) | Optional (for real WhatsApp phone) | `ACxxxxxxxx...` |
@@ -167,7 +167,7 @@ You can create the secret group in Modal directly from command line arguments:
 ```bash
 modal secret create complaint-sandbox-secrets \
   TYPESAFE_API_KEY="your-typesafe-key-here" \
-  TYPESAFE_API_URL="https://api.typesafe.ai/v1/decide" \
+  TYPESAFE_API_URL="https://api.typesafe.ai/v1/systemone" \
   DEFAULT_ENGINE_MODE="SIMULATED" \
   SANDBOX_ADMIN_KEY="your-custom-admin-key" \
   TWILIO_ACCOUNT_SID="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" \
