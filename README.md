@@ -27,6 +27,8 @@ The platform provides an intuitive, surveyor-grade UI designed for both technica
 └──────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
+:link: [Click here for live demo](https://mrmunro--social-housing-complaint-classifier-sandbox-dashboard.us-east.modal.run)
+
 ### 1. Prototype Landing Page (`/`)
 - **Direct Navigation Cards**: Quick links to the **Live Sandbox Dashboard**, **Product Thinking & Mermaid Diagrams**, and **MCP Agent Console**.
 - **Streamlined Layout**: Removed duplicate stats from the landing page—focusing attention on the problem statement and workflow entry points.
